@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use dioxus:: prelude::*;
+use dioxus::{html::fieldset,  prelude::*};
 use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
@@ -29,5 +29,38 @@ impl KeyedNotifications{
 
     pub fn has_message(&self) -> bool {
         !self.inner.is_empty()
+    }
+}
+
+#[derive(PartialEq, Props)]
+pub struct KeyedNotificationsProps<'a> {
+    legend: Option<&'a str>,
+    notifications: KeyedNotifications,
+}
+
+pub fn KeyedNotificationBox<'a>(cx: Scope<'a, KeyedNotificationsProps<'a> >) -> Element {
+    let notifications = cx.props.notifications.message().map(|msg| {
+        rsx!{
+            li { "{msg}" }
+        }
+    });
+    let legend = cx.props.legend.unwrap_or("Errors");
+
+    match  cx.props.notifications.has_message() {
+        true => cx.render(rsx! {
+            fieldset{
+                class: "fieldset border-red-300 rounded",
+                legend {
+                    class: "bg-red-300 px-4",
+                    "{legend}"
+                }
+                ul {
+                    class: "list-disc ml-4",
+                    notifications
+                }
+            }
+        }),
+        false => None
+        
     }
 }
