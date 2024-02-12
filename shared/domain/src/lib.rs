@@ -1,3 +1,3 @@
-let mod mod user;
+pub mod user;
 
-user;
+pub use user::{Password, Username};
