@@ -2,17 +2,19 @@
 
 use dioxus::prelude::*;
 
-use crate::prelude::*;
+use crate::{elements::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox}, prelude::*};
 
 pub struct  PageState{
     username: UseState<String>,
     password: UseState<String>,
+    form_errors: KeyedNotifications,
 }
 impl PageState{
     pub fn new(cx:Scope) -> Self {
         Self {
             username: use_state(cx, String::new).clone(),
             password: use_state(cx, String::new).clone(),
+            form_errors: KeyedNotifications::default(),
         }
 
     }
@@ -75,7 +77,11 @@ pub fn Register(cx: Scope) -> Element{
     let page_state = use_ref(cx, || page_state);
 
     let username_oninput = sync_handler!([page_state], move |ev: FormEvent| {
-        let username = uchat_domain:: Username::new(&ev.value);
+        if let Err(e) = uchat_domain:: Username::new(&ev.value){
+            page_state.with_mut(|state|state.form_errors.set("bad-username", e.to_string()));
+        } else{
+            page_state.with_mut(|state|state.form_errors.remove("bad-username"));
+        }
         page_state.with_mut(|state| state.username.set(ev.value.clone()));
     });
     let password_oninput = sync_handler!([page_state], move |ev: FormEvent| {
@@ -96,6 +102,10 @@ pub fn Register(cx: Scope) -> Element{
                 state: page_state.with(|state| state.password.clone()),
                 oninput: password_oninput,
             },
+            KeyedNotificationBox{
+                legend: "Form Errors",
+                notifications: page_state.clone().with(|state|state.form_errors.clone()),
+            }
 
             button {
                 class: "btn",

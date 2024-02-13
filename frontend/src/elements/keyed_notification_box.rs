@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use dioxus::{html::fieldset,  prelude::*};
+use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
