@@ -2,7 +2,7 @@
 
 use dioxus::prelude::*;
 
-use crate::{elements::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox}, prelude::*};
+use crate::{elements::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox}, maybe_class, prelude::*};
 
 pub struct  PageState{
     username: UseState<String>,
@@ -17,6 +17,11 @@ impl PageState{
             form_errors: KeyedNotifications::default(),
         }
 
+    }
+    pub fn can_submit(&self) -> bool {
+        !(self.form_errors.has_message()
+    || self.username.current().is_empty()
+    || self.password.current().is_empty())
     }
 }
 
@@ -76,6 +81,7 @@ pub fn Register(cx: Scope) -> Element{
     let page_state = PageState::new(cx);
     let page_state = use_ref(cx, || page_state);
 
+    //поверка на вход имя и пароля
     let username_oninput = sync_handler!([page_state], move |ev: FormEvent| {
         if let Err(e) = uchat_domain:: Username::new(&ev.value){
             page_state.with_mut(|state|state.form_errors.set("bad-username", e.to_string()));
@@ -84,9 +90,24 @@ pub fn Register(cx: Scope) -> Element{
         }
         page_state.with_mut(|state| state.username.set(ev.value.clone()));
     });
+
     let password_oninput = sync_handler!([page_state], move |ev: FormEvent| {
+        if let Err(e) = uchat_domain:: Password::new(&ev.value){
+            page_state.with_mut(|state|state.form_errors.set("bad-password", e.to_string()));
+        } else{
+            page_state.with_mut(|state|state.form_errors.remove("bad-password"));
+        }
         page_state.with_mut(|state| state.password.set(ev.value.clone()));
     });
+
+    let submit_btn_style = maybe_class!("btn-disabled", !page_state.with(|state| state.can_submit()));
+
+/* добавим макрос(maybe_class) и перепишем (см код выше)
+    let submit_btn_style = match page_state.with(|state| state.can_submit()) {
+        false => "btn-disabled",
+        true => "",
+    };
+*/
 
     cx.render(rsx! {
         form{
@@ -108,8 +129,9 @@ pub fn Register(cx: Scope) -> Element{
             }
 
             button {
-                class: "btn",
+                class: "btn {submit_btn_style}",
                 r#type: "submit",
+                disabled: !page_state.with(|state| state.can_submit()),
                 "Signup"
             }
         }
