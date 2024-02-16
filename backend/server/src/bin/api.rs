@@ -122,7 +122,7 @@ async fn run() -> Result<()> {
     info!(target: "uchat_server", bind_addr = %args.bind);
 
     //создаю маршрутизатор, где new_router(state) маршрутизирует веб-запросы на правильный обработчик 
-    let router = uchat_server::new_router(state);
+    let router = uchat_server::router::new_router(state);
 
     //затем мы запускаем e-server, поэтому мы используем AXM crate,это наш HTB server
     //мы используем try_bind таким путем, программа не аварийно заврешает работу, если адрес используется
