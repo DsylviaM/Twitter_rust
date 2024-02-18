@@ -1,7 +1,8 @@
 use std::net::SocketAddr;
+use tracing::log::error;
 use color_eyre::{Result, Help, eyre::Context};
 
-use clap::{command, Parser, Subcommand};
+use clap::{command, error, Parser, Subcommand};
 use dotenvy::dotenv;
 use tracing::{debug, info};
 
@@ -107,9 +108,9 @@ async fn run() -> Result<()> {
     //пропишем with_suggestion так как могут произойти распространенные вещи (например: подключение к базе впервый раз, когда может быть неверный URL, возможно у нас нет доступа к базе данных или она не создана) это лишь предложения которые будут в терминале
     let db_pool = uchat_query::AsyncConnectionPool::new(&args.database_url)
         .await
-        .with_context(|| "check database URL")
-        .with_context(|| "ensure correct database access rights")
-        .with_context(|| "make sure database exists")?;
+        .with_suggestion(|| "check database URL")
+        .with_suggestion(|| "ensure correct database access rights")
+        .with_suggestion(|| "make sure database exists")?;
 
     //создаем состояние нашего приложения, эта структура которая мы создали ранее
     let state = uchat_server::AppState{
@@ -136,6 +137,11 @@ async fn run() -> Result<()> {
     //и наконец мы запускаем сервер, мы возьмем наш маршрутизатор и запустим сервис make,
     //а он просто берет маршрутизатор, который мы будем создавать
     let server = server.serve(router.into_make_service());
+
+    info!(target: "uchat_server", "listening");
+    if let Err(e) = server.await {
+        error!(target: "uchat_server", "server_error: {}", e);
+    }
     Ok(())
 }
 
