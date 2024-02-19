@@ -13,10 +13,12 @@
 serde::Deserialize, serde:: Serialize,
 PartialEq, Ord, PartialOrd,
 )]
+
+
 //прописаны в заисимостях отдельно эту ф-ю для бекенда, чтобы не извлекатьт ID
 //мы проверяем функции запроса и если мы ее получим, мы добавляем еще одну производную версию
 //которая будет нового типа Diesel. DieselNewType позволяет нам использовать ID пользователя, когда мы запускаем запросы
-#[cfg_attr(feature = "query", derive(DieselNewType))]
+ #[cfg_attr(feature = "query", derive(DieselNewType))]
 pub struct UserId(uuid::Uuid);
 
 impl UserId {
