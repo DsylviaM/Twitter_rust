@@ -1,4 +1,5 @@
- #[macro_use] extern crate diesel_derive_newtype;
+ #[macro_use] 
+extern crate diesel_derive_newtype;
 
 pub mod schema;
 
@@ -14,4 +15,3 @@ pub mod util;
 pub use util::{AsyncConnection, AsyncConnectionPool, OwnedAsyncConnection};
 
 pub mod user;
-

@@ -1,4 +1,9 @@
-use axum::{routing::get, Router};
+use axum::{http::HeaderValue, routing::get, Router};
+use hyper::{header::CONTENT_TYPE, Method};
+use tower::ServiceBuilder;
+use tower_http::{cors::CorsLayer, trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer}, LatencyUnit};
+use tracing::Level;
+use tracing_subscriber::fmt::layer;
 
 use crate::AppState;
 
@@ -16,6 +21,35 @@ pub fn new_router(state:AppState) -> axum::Router {
         //обьединяем наши общедоступные маршруты
         .merge(public_routes)
         .merge(authorized_routes)
+        //layer это уровни трассировки, здесь мы настраиваем ядра
+        .layer(
+            ServiceBuilder::new()
+                .layer(
+                    TraceLayer::new_for_http()
+                    .make_span_with(DefaultMakeSpan::new().include_headers(true))
+                    .on_request(DefaultOnRequest::new().level(Level::INFO))
+                    .on_response(
+                        DefaultOnResponse::new()
+                            .level(Level::INFO)
+                            .latency_unit(LatencyUnit::Micros),
+                    ),
+                )
+                .layer(
+                    CorsLayer::new()
+                        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])//получаем GET POST OPTIONS для отправки в серверную часть
+                        .allow_credentials(true)//разрешающие учетные данные позволяют нас читать файлы cookie
+                        .allow_origin(
+                            std::env::var("FRONTEND_URL")
+                            .unwrap()
+                            .parse::<HeaderValue>()
+                            .unwrap()
+                        )
+                        .allow_headers([CONTENT_TYPE]), //нам нужны заголовки типов контента
+                )
+                //слой расширения, этот слой будет присоединять произвольные данные к конвееру обработки слоя (processing pipeline)
+                .layer(axum::Extension(state.clone())), //мы сможем получать доступ к состоянию слоя (здесь сотояние для слоев)
+        )
+        .with_state(state) //позволит нам получить доступ к состоянию нашего приложения (здесь сотояние для обработчиков)
 }
 
 /* С каждым маршрутизатором мы можем сделать промежуточное программное обеспечение,
