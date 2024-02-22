@@ -6,3 +6,10 @@ pub trait Endpoint {
         Self::URL
     }
 }
+
+//создаем тип ответа на ошибку
+#[derive(thiserror::Error, Debug, Deserialize, Serialize)]
+#[error("{msg}")]
+pub struct RequestFailed {
+    pub msg: String,
+}

@@ -4,6 +4,7 @@ use uchat_query::{AsyncConnection, AsyncConnectionPool, QueryError};
 
 pub mod logging;
 pub mod router;
+pub mod error;
 
 #[derive(FromRef, Clone)]
 pub struct  AppState{

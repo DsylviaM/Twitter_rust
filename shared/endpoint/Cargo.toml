@@ -13,4 +13,4 @@ thiserror = "1.0.57"
 url = { version = "2.5.0", features = ["serde"] }
 uuid = { version = "1.7.0", features = ["v4", "serde", "js"] }
 
-uchat_domain ={ path = "../domain" }
+uchat_domain = { path = "../domain" }
