@@ -6,6 +6,7 @@ pub mod logging;
 pub mod router;
 pub mod error;
 pub mod extractor;
+pub mod handler;
 
 #[derive(FromRef, Clone)]
 pub struct  AppState{

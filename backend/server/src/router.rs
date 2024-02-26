@@ -5,7 +5,7 @@ use tower_http::{cors::CorsLayer, trace::{DefaultMakeSpan, DefaultOnRequest, Def
 use tracing::Level;
 use tracing_subscriber::fmt::layer;
 
-use crate::AppState;
+use crate::{handler::with_public_handler, AppState};
 
 //создадим новую функцию маршрутизатора, это требует некоторого места приложения,
 // где мы вернем сюда маршрутизатор Axum
@@ -13,7 +13,11 @@ use crate::AppState;
 //чтобы наш первый маршрутизатор был общедоступным маршрутом, это будет те, которые всегда доступны
 //нисмотря ни на что. Если посмотреть на вторую часть get то это и есть наш обработчик(метод)
 pub fn new_router(state:AppState) -> axum::Router {
-    let public_routes = Router::new().route("/", get(move || async {"this is the root page"}));
+    let public_routes = Router::new()
+    .route("/", get(move || async {"this is the root page"}))
+    .route(
+        CreateUser::URL,
+        post(with_public_handler::<CreateUser>));
     // теперь маршрутизаторы по ИД пользователя
     let authorized_routes = Router::new();
     //затем настоящий маршрутизатор, который мы возвращаем
