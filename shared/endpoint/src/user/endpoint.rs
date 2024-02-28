@@ -1,4 +1,5 @@
-use  uchat_domain::{ids::*,Password, Username};
+use serde::{Deserialize, Serialize};
+use  uchat_domain::{ids::*, Password, Username};
 
 use crate::Endpoint;
 
@@ -8,11 +9,13 @@ pub struct CreateUser {
     pub password: Password,
 }
 
+
 impl Endpoint for CreateUser {
     const URL: &'static str = "/account/create";
 }
 
+#[derive(Clone, Deserialize, Serialize)]
 pub struct CreateUserOk {
-    pub user_id: User_Id,
+    pub user_id: UserId,
     pub username:Username,
 }

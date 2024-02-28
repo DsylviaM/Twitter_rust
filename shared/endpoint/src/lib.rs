@@ -1,4 +1,6 @@
 pub mod user;
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 pub trait Endpoint {
     const URL: &'static str;
@@ -8,7 +10,7 @@ pub trait Endpoint {
 }
 
 //создаем тип ответа на ошибку
-#[derive(thiserror::Error, Debug, Deserialize, Serialize)]
+#[derive(Error, Debug, Deserialize, Serialize)]
 #[error("{msg}")]
 pub struct RequestFailed {
     pub msg: String,

@@ -16,7 +16,7 @@ where
         type Rejection = (StatusCode, &'static str);
         //асинхронизация функции, которая из документации. Здесь Extension<AppStatу> расширение по слоям, которое мы добавили и состояния будут от туда
         //state.db_pool здесь мы получаем доступ к (state)состоянию просматриваем пул (db_pool) получаем собственное соединение get_owned ожидая (await) пока оно станет доступным и если что то пошло не так выводим сообщение 
-        async fn from_request_parts(parts:&mut Parts, _:s) -> Result<Self, Self::Rejection>{
+        async fn from_request_parts(parts: &mut Parts, _:&S) -> Result<Self, Self::Rejection>{
             let Extension(state) = parts.extract::<Extension<AppState>>().await.unwrap();
             let connection = state.db_pool.get_owned().await.map_err(|_| {
                 (

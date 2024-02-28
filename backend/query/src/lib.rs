@@ -1,4 +1,4 @@
- #[macro_use] 
+#[macro_use] 
 extern crate diesel_derive_newtype;
 
 pub mod schema;
