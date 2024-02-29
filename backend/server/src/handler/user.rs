@@ -2,7 +2,7 @@
 use axum::{async_trait, Json};
 use hyper::StatusCode;
 use tracing::info;
-use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
+use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk};
 
 use crate::{error::ApiResult, extractor::DbConnection, AppState};
 
@@ -32,5 +32,17 @@ impl PublicApiRequest for CreateUser{
                 username: self.username,
             }),
         ))
+    }
+}
+
+#[async_trait]
+impl PublicApiRequest for Login{
+    type Response = (StatusCode, Json<LoginOk>);
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        state: AppState,
+    )-> ApiResult<Self::Response> {
+        todo!();
     }
 }
