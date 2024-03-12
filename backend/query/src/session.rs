@@ -57,7 +57,7 @@ pub fn new(
             .get_result(conn)
     }
 }
-/* 
+
 pub fn get(conn: &mut PgConnection, session_id: SessionId) -> Result<Option<Session>, DieselError> {
     use crate::schema::web;
     web::table
@@ -77,4 +77,3 @@ pub fn find(
         .filter(web::fingerprint.eq(fingerprint))
         .get_result(conn)
 }
-*/
