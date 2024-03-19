@@ -38,11 +38,22 @@ impl PublicApiRequest for CreateUser{
 #[async_trait]
 impl PublicApiRequest for Login{
     type Response = (StatusCode, Json<LoginOk>);
+    
     async fn process_request(
         self,
         DbConnection(mut conn): DbConnection,
         state: AppState,
     )-> ApiResult<Self::Response> {
-        todo!();
+        //если не верный пароль, то мы можем увидеть какой пользователь пытался войти
+        let _span =
+            tracing::span!(tracing::Level::INFO, "logging in", user = %self.username.as_ref())
+                .entered();
+        let check_password = || -> ApiResult<()> {
+            let hash = uchat_query::user::get_password_hash(&mut conn, &self.username)?;
+            let hash = uchat_crypto::password::deserialize_hash(&hash)?;
+    
+            uchat_crypto::verify_password(self.password, &hash)?;
+            Ok(())
+        };
     }
 }
