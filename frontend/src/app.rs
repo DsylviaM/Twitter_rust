@@ -13,7 +13,7 @@ pub fn App(cx: Scope) -> Element {
         Router {
              Route{ to: page::ACCOUNT_REGISTER, page::Register {} },
              Route{ to: page::ACCOUNT_LOGIN, page::Login {} },
-            //  Route{ to: page::HOME, page::Home {} },
+             Route{ to: page::HOME, page::Home {} },
         }
     })
 }

@@ -84,10 +84,10 @@ pub fn Login(cx: Scope) -> Element{
     let api_client = ApiClient::global();
     let page_state = PageState::new(cx);
     let page_state = use_ref(cx, || page_state);
-    // let router = use_router(cx);
+    let router = use_router(cx);
 
     let form_onsubmit = 
-        async_handler!(&cx, [api_client, page_state],
+        async_handler!(&cx, [api_client, page_state, router],
             move |_| async move {
                 use uchat_endpoint::user::endpoint::{Login, LoginOk};
                     let request_data = {
@@ -111,7 +111,7 @@ pub fn Login(cx: Scope) -> Element{
                                 res.session_id,
                                 res.session_expires
                             );
-                            // router.navigate_to(page::HOME)
+                            router.navigate_to(page::HOME)
                         }
                         Err(e) => (),
                     }

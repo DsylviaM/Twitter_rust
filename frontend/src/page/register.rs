@@ -83,9 +83,10 @@ pub fn Register(cx: Scope) -> Element{
     let api_client = ApiClient::global();
     let page_state = PageState::new(cx);
     let page_state = use_ref(cx, || page_state);
+    let router = use_router(cx);
 
     let form_onsubmit = 
-        async_handler!(&cx, [api_client, page_state],
+        async_handler!(&cx, [api_client, page_state, router],
             move |_| async move {
                 use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
                 let request_data = {
@@ -104,7 +105,7 @@ pub fn Register(cx: Scope) -> Element{
                 let response = fetch_json!(<CreateUserOk>, api_client, request_data);
                 match response {
                     Ok(res) => {
-                        // router.navigate_to(page::HOME)
+                        router.navigate_to(page::HOME)
                     },
                     Err(e) => (),
                 }
