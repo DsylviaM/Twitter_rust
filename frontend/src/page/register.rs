@@ -105,6 +105,11 @@ pub fn Register(cx: Scope) -> Element{
                 let response = fetch_json!(<CreateUserOk>, api_client, request_data);
                 match response {
                     Ok(res) => {
+                        crate::util::cookie::set_session(
+                            res.session_signature,
+                            res.session_id,
+                            res.session_expires
+                        );
                         router.navigate_to(page::HOME)
                     },
                     Err(e) => (),

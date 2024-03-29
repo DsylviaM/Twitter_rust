@@ -1,15 +1,44 @@
 
+use std::clone;
+
 use axum::{async_trait, Json};
 use chrono::{Duration, Utc};
 use hyper::StatusCode;
 use rand::rngs;
 use tracing::info;
 use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk};
-
+use uchat_query::session::{self, Session};
+use uchat_domain::ids::*;
 
 use crate::{error::ApiResult, extractor::DbConnection, AppState};
 
 use super::PublicApiRequest;
+
+#[derive(Clone)]
+pub struct SessionsSignature(String);
+
+fn new_seassion(
+    state: &AppState,
+    conn: &mut uchat_query::AsyncConnection,
+    user_id: UserId,
+) -> ApiResult<(Session, SessionsSignature, Duration)> {
+    //new seassion
+        //создадим отпечаток пальца, он будет пустым
+            let fingerprint = serde_json::json!({});
+            let session_duration = Duration::weeks(3);
+            let session = uchat_query::session::new(
+                conn,
+                user_id,
+                session_duration,
+                fingerprint.into(),
+            )?;
+            let mut rng = state.rng.clone();
+            let signature = state
+                .signing_keys
+                .sign(&mut rng, session.id.as_uuid().as_bytes());
+            let signature = uchat_crypto::encode_base64(signature);
+            Ok((session, SessionsSignature(signature), session_duration))
+}
 
 #[async_trait]
 impl PublicApiRequest for CreateUser{
@@ -28,11 +57,18 @@ impl PublicApiRequest for CreateUser{
 
         info!(username = self.username.as_ref(), "new user created");
 
+        let (session, signature, duration) = new_seassion(&state, &mut conn, user_id)?;
+
+
         Ok((
             StatusCode::CREATED,
             Json(CreateUserOk{
                 user_id,
                 username: self.username,
+
+                session_signature: signature.0,
+                session_id: session.id,
+                session_expires:Utc::now() + duration,
             }),
         ))
     }
@@ -57,34 +93,17 @@ impl PublicApiRequest for Login{
             uchat_crypto::verify_password(self.password, &hash)?;
             Ok(())
         };
-        // check_password().map_err(|_| ServerErr::wrong_password())?;
 
         let user = uchat_query::user::find(&mut conn, &self.username)?;
-            // .map_err(|_| ServerErr::missing_login())?;
-        //new seassion
-        //создадим отпечаток пальца, он будет пустым
-        let (session, signature, duration) = {
-            let fingerprint = serde_json::json!({});
-            let session_duration = Duration::weeks(3);
-            let session = uchat_query::session::new(
-                &mut conn,
-                user.id,
-                session_duration,
-                fingerprint.into(),
-            )?;
-            let mut rng = state.rng.clone();
-            let signature = state
-                .signing_keys
-                .sign(&mut rng, session.id.as_uuid().as_bytes());
-            let signature = uchat_crypto::encode_base64(signature);
-            (session, signature, session_duration)
-        };
+
+        let (session, signature, duration) = new_seassion(&state, &mut conn, user.id)?;
+
         Ok((
             StatusCode::OK,
             Json(LoginOk{
                 session_id:session.id,
                 session_expires: Utc::now() + duration,
-                session_signature:signature,
+                session_signature:signature.0,
                 display_name:user.display_name,
                 email: user.email,
                 profile_image: None,
