@@ -8,5 +8,6 @@ pub fn Home(cx: Scope) -> Element {
         h1{
             "this is the home page"
         }
+        tr{"g"}tr{"g"}tr{"g"}tr{"g"}tr{"g"}tr{"g"}tr{"g"}tr{"g"}
     })
 }
