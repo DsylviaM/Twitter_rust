@@ -7,6 +7,8 @@ pub mod user;
 
 pub mod ids;
 
+pub mod post;
+
 pub use user::{Password, Username};
 
 pub trait UserFacingError {

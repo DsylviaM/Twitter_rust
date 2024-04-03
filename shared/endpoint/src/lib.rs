@@ -1,4 +1,6 @@
 pub mod user;
+pub mod post;
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
