@@ -23,6 +23,7 @@ uuid = { version = "1.3.0", features = ["v4", "serde"] }
 
 #для идентификатора базы данных идентификатора пользователя и мы хотим включить ф-ю запроса
 uchat_domain = {path = "../../shared/domain", features = ["query"]}
+uchat_endpoint = {path = "../../shared/endpoint"}
 
 
 [dependencies.diesel]
