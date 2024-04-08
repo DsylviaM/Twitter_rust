@@ -12,10 +12,6 @@ pub struct CreateUser {
 }
 
 
-impl Endpoint for CreateUser {
-    const URL: &'static str = "/account/create";
-}
-
 #[derive(Clone, Deserialize, Serialize)]
 pub struct CreateUserOk {
     pub user_id: UserId,
@@ -30,10 +26,6 @@ pub struct CreateUserOk {
 pub struct Login {
     pub username: Username,
     pub password: Password,
-}
-
-impl Endpoint for Login {
-    const URL: &'static str = "/account/login";
 }
 
 #[derive(Clone, Deserialize, Serialize)]
