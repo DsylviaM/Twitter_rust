@@ -47,4 +47,13 @@ impl Post {
     }
 }
 
+pub fn new(conn: &mut PgConnection, post: Post) -> Result<PostId, DieselError> {
+    conn.transaction::<PostId, DieselError, _>(|conn| {
+        diesel::insert_into(schema::posts::table)
+        .values(&post)
+        .execute(conn)?;
+    Ok(post.id)
+    })
+}
+
 

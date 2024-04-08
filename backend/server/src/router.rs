@@ -9,9 +9,9 @@ trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
 LatencyUnit,
 };
 use tracing::Level;
-use uchat_endpoint::{user::endpoint::{CreateUser, Login}, Endpoint};
+use uchat_endpoint::{post::endpoint::NewPost, user::endpoint::{CreateUser, Login}, Endpoint};
 
-use crate::{handler::with_public_handler, AppState};
+use crate::{handler::{with_handler, with_public_handler}, AppState};
 
 //создадим новую функцию маршрутизатора, это требует некоторого места приложения,
 // где мы вернем сюда маршрутизатор Axum
@@ -24,7 +24,8 @@ pub fn new_router(state:AppState) -> axum::Router {
     .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
     .route(Login::URL, post(with_public_handler::<Login>));
     // теперь маршрутизаторы по ИД пользователя
-    let authorized_routes = Router::new();
+    let authorized_routes = Router::new()
+        .route(NewPost::URL, post(with_handler::<NewPost>));
     //затем настоящий маршрутизатор, который мы возвращаем
     Router::new()
         //обьединяем наши общедоступные маршруты
