@@ -47,6 +47,43 @@ pub fn MessageInput(cx: Scope, page_state: UseRef<PageState>) -> Element{
     })
 }
 
+#[inline_props]
+pub fn HeadlineInput(cx: Scope, page_state: UseRef<PageState>) -> Element{
+    use uchat_domain::post::Headline;
+
+    let max_chars = Headline::MAX_CHARS;
+
+    let wrong_len = maybe_class!(
+        "err-text-color",
+        page_state.read().headline.len() > max_chars
+    );
+
+    cx.render(rsx!{
+        div {
+            label {
+                r#for: "headline",
+                div {
+                    class: "flex flex-row justify-between",
+                    span {"Headline"},
+                    span {
+                        class: "text-right {wrong_len}",
+                        "{page_state.read().headline.len()}/{max_chars}",
+                    }
+                }
+            },
+            input{
+                class: "input-field",
+                id: "headline",
+                value: "{page_state.read().headline}",
+                oninput: move |ev| {
+                    page_state.with_mut(|state| state.headline = ev.data.value.clone());
+                },
+            }
+        }
+    })
+}
+
+
 pub fn NewChat(cx:Scope) -> Element {
     let page_state = use_ref(cx, PageState::default);
     cx.render(rsx! {
@@ -54,7 +91,7 @@ pub fn NewChat(cx:Scope) -> Element {
             class: "flex flex-col gap-4",
             onsubmit: move |_| (),
             MessageInput{ page_state: page_state.clone()},
-            //headline input
+            HeadlineInput{ page_state: page_state.clone()},
             button {
                 class: "btn",
                 r#type: "submit",
@@ -62,7 +99,7 @@ pub fn NewChat(cx:Scope) -> Element {
                 "Post"
 
             }
-            tr{"g"}tr{"g"}tr{"g"}tr{"g"}
+            // tr{"g"}tr{"g"}tr{"g"}tr{"g"}
         }
     })
 }
