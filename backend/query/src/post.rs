@@ -18,7 +18,6 @@ pub struct Content(pub serde_json::Value);
 
 #[derive(Debug, Queryable, Selectable, Insertable)]
 #[diesel(table_name = schema::posts)]
-
 pub struct Post {
     pub id: PostId,
     pub user_id: UserId,
