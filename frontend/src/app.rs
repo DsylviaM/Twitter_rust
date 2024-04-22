@@ -1,12 +1,12 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-use crate::{elements::Navbar, prelude::*};
+use crate::{elements::{toaster::Toaster, Navbar}, prelude::*};
 
 use dioxus_router::{Route, Router};
-use fermi::use_init_atom_root;
+use fermi::{use_init_atom_root, AtomRef};
 
-
+pub static TOASTER: AtomRef<Toaster> = |_| Toaster::default();
 
 pub fn App(cx: Scope) -> Element {
     use_init_atom_root(cx);
