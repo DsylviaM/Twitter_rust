@@ -105,6 +105,37 @@ pub fn ToastRoot<'a>(cx: Scope<'a, ToastRootProps<'a>>) -> Element {
             }
         });
 
+
+        let total_toasts = &toaster.read().toasts.len();
+
+        // NOTE use_future reruns the future whenever the dependencies change
+        let _remove_expired = use_future(cx, (total_toasts,), |(total_toasts,)| {
+        let toaster = toaster.clone();
+        async move {
+            loop {
+                if (total_toasts == 0) {
+                    break;
+                }
+                let expired_ids = toaster
+                    .read()
+                    .iter()
+                    .filter_map(|(&id, toast)| {
+                        if Utc::now() > toast.expires {
+                        Some(id)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<usize>>();
+            expired_ids
+                .iter()
+                .for_each(|&id| toaster.write().remove(id));
+            gloo_timers::future::TimeoutFuture::new(200_u32).await;
+            }
+        }
+    });
+
+
         cx.render(rsx!{
             div {
                 class: "fixed bottom-[var(--navbar-height)]
