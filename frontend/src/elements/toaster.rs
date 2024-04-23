@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use chrono::{DateTime, Duration, Utc};
-use dioxus::{prelude::*, rsx::Element};
+use dioxus::prelude::*;
 use fermi::{use_atom_ref, UseAtomRef};
 
 pub fn use_toaster(cx: & ScopeState) -> &UseAtomRef<Toaster> {
@@ -27,13 +27,14 @@ pub struct Toaster {
     toasts: HashMap<usize, Toast>,
     next_id: usize,
 }
+
 impl Toaster {
     fn increment_id(&mut self) {
         self.next_id +=1;
 
     }
 
-    pub fn push(&mut self, toast: Toast) {
+    fn push(&mut self, toast: Toast) {
         self.toasts.insert(self.next_id, toast);
         self.increment_id();
     }
@@ -74,11 +75,47 @@ impl Toaster {
     }
 }
 
+#[derive(Props)]
 pub struct ToastRootProps<'a> {
-    toaster: &'a UseAtomRef<Toaster>
+    // NOTE UseAtomRef gives access to global state
+    toaster: &'a UseAtomRef<Toaster>,
 }
 
-pub fn ToastRoot<'a>(cx: Scope<'a, ToastRootProps<'a> >) -> Element {
-    todo!()
+pub fn ToastRoot<'a>(cx: Scope<'a, ToastRootProps<'a>>) -> Element {
+    let toaster = cx.props.toaster;
+
+    let toasts = &toaster.read();
+
+    let ToastElements = toasts.iter().map(|(&id, toast)| {
+            let toast_style = match toast.kind {
+                ToastKind::Info => "bg-slate-200 border-slate-300",
+                ToastKind::Error => "bg-slate-300 border-rose-400",
+                ToastKind::Success => "bg-emerald-200 border-emerald-300",
+            };
+
+            rsx!{
+                div {
+                    key: "{id}",
+                    class: "{toast_style} p-3 cursor-pointer border-solid border rounded",
+                    onclick: move |_| {
+                        toaster.write().remove(id);
+                    },
+                    "{toast.message}"
+                }
+            }
+        });
+
+        cx.render(rsx!{
+            div {
+                class: "fixed bottom-[var(--navbar-height)]
+                w-screen
+                max-w-[var(--content-max-width)]",
+                div {
+                    class: "flex flex-col gap-5 px-5 mb-5",
+                    ToastElements,
+                }
+            }
+        })
+        
 }
 

@@ -10,8 +10,8 @@ pub fn NewPostPopup(cx: Scope, hide: UseState<bool>) -> Element {
     let hide_class = maybe_class!("hidden", *hide.get());
 
     const BUTTON_CLASS: &str = "grid grid-cols-[20px_1fr] gap-4 pl-4
-                                justify-center items-center
-                                w-full h-12
+                                justify-center items-end
+                                w-full h-50
                                 border-y navbar-border-color";
     cx.render(rsx! {
         div {
