@@ -6,9 +6,9 @@ use chrono::{Duration, Utc};
 use hyper::StatusCode;
 use rand::rngs;
 use tracing::info;
-use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk};
+use uchat_endpoint::user::{endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, types::PublicUserProfile};
 use uchat_query::session::{self, Session};
-use uchat_domain::ids::*;
+use uchat_domain::{ids::*, user::DisplayName};
 
 use crate::{error::ApiResult, extractor::DbConnection, AppState};
 
@@ -16,6 +16,18 @@ use super::PublicApiRequest;
 
 #[derive(Clone)]
 pub struct SessionsSignature(String);
+
+pub fn to_public() -> ApiResult<PublicUserProfile> {
+    Ok(
+       PublicUserProfile {
+         id: UserId,
+         display_name: user.display_name.and_then(|name| DisplayName::new(name).ok()),
+         handle: user.handle,
+         profile_image: None,
+         created_at: user.created_at,
+         am_following: false,
+    })
+}
 
 fn new_seassion(
     state: &AppState,

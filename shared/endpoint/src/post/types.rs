@@ -40,7 +40,7 @@ impl Default for NewPostOptions {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub enum like_status {
+pub enum LikeStatus {
     Dislike,
     Like,
     NoReaction
@@ -53,8 +53,9 @@ pub struct  PublicPost {
     pub content: Content,
     pub time_posted: DateTime<Utc>,
     pub reply_to: Option<(Username, UserId, PostId)>,
-    pub like_status: like_status,
+    pub like_status: LikeStatus,
     pub bookmarked: bool,
+    pub boosted: bool,
     pub likes: i64,
     pub dislikes: i64,
     pub boosts: i64,
