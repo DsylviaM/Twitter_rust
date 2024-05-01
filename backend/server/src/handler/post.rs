@@ -5,7 +5,7 @@ use chrono::{Duration, Utc};
 use hyper::StatusCode;
 use rand::rngs;
 use tracing::info;
-use uchat_endpoint::{post::{endpoint::{NewPost, NewPostOk, TrendingPosts, TrendingPostsOk}, types::{LikeStatus, PublicPost}}, user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, RequestFailed};
+use uchat_endpoint::{post::{endpoint::{Bookmark, BookmarkOk, NewPost, NewPostOk, TrendingPosts, TrendingPostsOk}, types::{BookmarkAction, LikeStatus, PublicPost}}, user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, RequestFailed};
 use uchat_query::{post::Post, session::{self, Session}, AsyncConnection};
 use uchat_domain::{ids::*, Username};
 
@@ -104,5 +104,34 @@ impl AuthorizedApiRequest for TrendingPosts{
          }
 
          Ok((StatusCode::OK, Json(TrendingPostsOk{posts})))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for Bookmark{
+    type Response = (StatusCode, Json<BookmarkOk>);
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        state: AppState,
+    )-> ApiResult<Self::Response> {
+        match self.action {
+            BookmarkAction::Add => {
+                uchat_query::post::bookmark(&mut conn, session.user_id, self.post_id)?;
+
+            }
+            BookmarkAction::Remove => {
+                uchat_query::post::delete_bookmark(&mut conn, session.user_id, self.post_id)?;
+                
+            }
+        }
+        
+        Ok((
+            StatusCode::OK,
+            Json(BookmarkOk {
+                status: self.action,
+            }),
+        ))
     }
 }

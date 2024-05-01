@@ -8,6 +8,7 @@ use uchat_domain::ids::PostId;
 use uchat_endpoint::post::types::PublicPost;
 
 pub mod content;
+pub mod actionbar;
 
 pub fn use_post_manager(cx: &ScopeState) -> &UseAtomRef<PostManager> {
     use_atom_ref(cx, crate::app::POSTMANAGER)

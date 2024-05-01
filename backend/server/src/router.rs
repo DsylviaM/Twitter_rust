@@ -9,7 +9,7 @@ trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
 LatencyUnit,
 };
 use tracing::Level;
-use uchat_endpoint::{post::endpoint::{NewPost, TrendingPosts}, user::endpoint::{CreateUser, Login}, Endpoint};
+use uchat_endpoint::{post::endpoint::{Bookmark, NewPost, TrendingPosts}, user::endpoint::{CreateUser, Login}, Endpoint};
 
 use crate::{handler::{with_handler, with_public_handler}, AppState};
 
@@ -26,6 +26,7 @@ pub fn new_router(state:AppState) -> axum::Router {
     // теперь маршрутизаторы по ИД пользователя
     let authorized_routes = Router::new()
         .route(NewPost::URL, post(with_handler::<NewPost>))
+        .route(Bookmark::URL, post(with_handler::<Bookmark>))
         .route(TrendingPosts::URL, post(with_handler::<TrendingPosts>));
         
     //затем настоящий маршрутизатор, который мы возвращаем

@@ -33,4 +33,5 @@ route!("/account/login" => user::endpoint::Login);
 
 //authorized routes
 route!("/post/new" => post::endpoint::NewPost);
+route!("/post/bookmark" => post::endpoint::Bookmark);
 route!("/post/trending" => post::endpoint::TrendingPosts);
