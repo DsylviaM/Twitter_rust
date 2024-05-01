@@ -5,7 +5,7 @@ use chrono::{Duration, Utc};
 use hyper::StatusCode;
 use rand::rngs;
 use tracing::info;
-use uchat_endpoint::{post::{endpoint::{NewPost, NewPostOk, TrendingPosts, TrendingPostsOk}, types::{Like_status, PublicPost}}, user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, RequestFailed};
+use uchat_endpoint::{post::{endpoint::{NewPost, NewPostOk, TrendingPosts, TrendingPostsOk}, types::{LikeStatus, PublicPost}}, user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, RequestFailed};
 use uchat_query::{post::Post, session::{self, Session}, AsyncConnection};
 use uchat_domain::{ids::*, Username};
 
@@ -44,7 +44,7 @@ pub fn to_public(
                 None => None,
             }
          },
-         like_status: Like_status::NoReaction,
+         like_status:LikeStatus::NoReaction,
          bookmarked: false,
          boosted: false,
          likes: 0,
@@ -98,11 +98,11 @@ impl AuthorizedApiRequest for TrendingPosts{
             match to_public(&mut conn, post, Some(&session)){
                 Ok(post) => posts.push(post),
                 Err(e) => {
-                    tracing::error!(err = %e.err, post_id = ?post_id. "post contains invalid data");
+                    tracing::error!(err = %e.err, post_id = ?post_id, "post contains invalid data");
                 }
             }
          }
 
-         Ok((StatusCode::Ok, Json(TrendingPostsOk{posts})))
+         Ok((StatusCode::OK, Json(TrendingPostsOk{posts})))
     }
 }

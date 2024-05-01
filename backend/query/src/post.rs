@@ -67,7 +67,7 @@ pub fn get_trending(conn: &mut PgConnection) -> Result<Vec<Post>, DieselError> {
         .filter(posts::direct_message_to.is_null())
         .order(posts::time_posted.desc())
         .limit(30)
-        .get_resuls(conn)
+        .get_results(conn)
 }
 
 

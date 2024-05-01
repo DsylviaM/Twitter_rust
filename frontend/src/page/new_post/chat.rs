@@ -162,7 +162,7 @@ pub fn NewChat(cx:Scope) -> Element {
                 disabled: !page_state.read().can_submit(),
                 "Post"
             }
-            // tr{"g"}tr{"g"}tr{"g"}tr{"g"}
+             tr{"g"}tr{"g"}tr{"g"}tr{"g"}
         }
     })
 }

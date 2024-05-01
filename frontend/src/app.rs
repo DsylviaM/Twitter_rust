@@ -1,12 +1,13 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-use crate::{elements::{toaster::{ToastRoot, Toaster}, Navbar}, prelude::*};
+use crate::{elements::{post::PostManager, toaster::{ToastRoot, Toaster}, Navbar}, prelude::*};
 
 use dioxus_router::{Route, Router};
 use fermi::{use_init_atom_root, AtomRef};
 
 pub static TOASTER: AtomRef<Toaster> = |_| Toaster::default();
+pub static POSTMANAGER: AtomRef<PostManager> = |_| PostManager::default();
 
 pub fn App(cx: Scope) -> Element {
     use_init_atom_root(cx);
@@ -20,6 +21,9 @@ pub fn App(cx: Scope) -> Element {
              Route{ to: page::ACCOUNT_LOGIN, page::Login {} },
              Route{ to: page::HOME, page::Home {} },
              Route{ to: page::POST_NEW_CHAT, page::NewChat {}},
+             Route{ to: page::POST_TRENDING, page::Trending {}},
+
+
              ToastRoot{ toaster: toaster },
              Navbar{}
         }
