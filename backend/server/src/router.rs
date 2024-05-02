@@ -9,7 +9,7 @@ trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
 LatencyUnit,
 };
 use tracing::Level;
-use uchat_endpoint::{post::endpoint::{Bookmark, NewPost, TrendingPosts}, user::endpoint::{CreateUser, Login}, Endpoint};
+use uchat_endpoint::{post::endpoint::{Bookmark, NewPost, React, TrendingPosts}, user::endpoint::{CreateUser, Login}, Endpoint};
 
 use crate::{handler::{with_handler, with_public_handler}, AppState};
 
