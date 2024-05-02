@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::{elements::post::content::Content, prelude::*};
+use crate::{elements::post::{actionbar::Actionbar, content::Content}, prelude::*};
 use dioxus::prelude::*;
 use fermi::{use_atom_ref, UseAtomRef};
 use indexmap::IndexMap;
@@ -109,7 +109,7 @@ pub fn PublicPostEntry(cx: Scope, post_id: PostId) -> Element {
                 Header { post: this_post},
                 //reply to
                 Content {post: this_post},
-                //action bar
+                Actionbar{ post_id: this_post.id },
                 hr {},
             }
         }
