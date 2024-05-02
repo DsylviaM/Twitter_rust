@@ -27,6 +27,7 @@ pub fn new_router(state:AppState) -> axum::Router {
     let authorized_routes = Router::new()
         .route(NewPost::URL, post(with_handler::<NewPost>))
         .route(Bookmark::URL, post(with_handler::<Bookmark>))
+        .route(React::URL, post(with_handler::<React>))
         .route(TrendingPosts::URL, post(with_handler::<TrendingPosts>));
         
     //затем настоящий маршрутизатор, который мы возвращаем
