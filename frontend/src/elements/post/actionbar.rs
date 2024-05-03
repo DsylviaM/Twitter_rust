@@ -5,30 +5,31 @@ use dioxus::prelude::*;
 use uchat_domain::ids::PostId;
 use uchat_endpoint::post::types::LikeStatus;
 
+#[inline_props]
 pub fn LikeDislike(
     cx: Scope,
     post_id: PostId,
     like_status: LikeStatus,
     likes: i64,
-    dislike: i64) -> Element {
+    dislikes: i64) -> Element {
     let post_manager = use_post_manager(cx);
     let toaster = use_toaster(cx);
     let api_client = ApiClient::global();
 
     let like_icon = match like_status {
-        LikeStatus::Like => "/static/icons/icon-like-selested.svg",
+        LikeStatus::Like => "/static/icons/icon-like-selected.svg",
         _ => "/static/icons/icon-like.svg",
     };
 
     let dislike_icon = match like_status {
-        LikeStatus::Dislike => "/static/icons/icon-dislike-selested.svg",
+        LikeStatus::Dislike => "/static/icons/icon-dislike-selected.svg",
         _ => "/static/icons/icon-dislike.svg",
     };
 
     let like_onclick = async_handler!(
         &cx,
-        [api_client, post_manager, toaster, post_id, like_status],
-        move |_| async move {
+        [api_client, post_manager, toaster, post_id ],
+        move |like_status| async move {
             use uchat_endpoint::post::endpoint::{React, ReactOk};
             let like_status = {
                 if post_manager
@@ -57,7 +58,30 @@ pub fn LikeDislike(
     );
 
     cx.render(rsx! {
-        "react"
+        div {
+            class: "cursor-pointer",
+            onclick: move |_| like_onclick(LikeStatus::Like),
+            img {
+                class: "actionbar-icon",
+                src: "{like_icon}",
+            },
+            div {
+                class: "text-center",
+                "{likes}"
+            }
+        },
+        div {
+            class: "cursor-pointer",
+            onclick: move |_| like_onclick(LikeStatus::Dislike),
+            img {
+                class: "actionbar-icon",
+                src: "{dislike_icon}",
+            },
+            div {
+                class: "text-center",
+                "{dislikes}"
+            }
+        }
     })
 }
 
@@ -127,8 +151,14 @@ pub fn Actionbar(cx:Scope, post_id: PostId) -> Element {
             Bookmark{
                 bookmarked: this_post.bookmarked,
                 post_id: this_post_id,
+            },
+            LikeDislike {
+                post_id: this_post.id,
+                likes: this_post.likes,
+                dislikes: this_post.dislikes,
+                like_status: this_post.like_status,
+                
             }
-            //like & dislike
             //comment
         }
         //quick respond
