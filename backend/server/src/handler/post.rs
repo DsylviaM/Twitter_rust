@@ -5,7 +5,7 @@ use chrono::{Duration, Utc};
 use hyper::StatusCode;
 use rand::rngs;
 use tracing::info;
-use uchat_endpoint::{post::{endpoint::{Bookmark, BookmarkOk, NewPost, NewPostOk, React, ReactOk, TrendingPosts, TrendingPostsOk}, types::{BookmarkAction, LikeStatus, PublicPost}}, user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, RequestFailed};
+use uchat_endpoint::{post::{endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPosts, TrendingPostsOk}, types::{BookmarkAction, BoostAction, LikeStatus, PublicPost}}, user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, RequestFailed};
 use uchat_query::{post::Post, session::{self, Session}, AsyncConnection};
 use uchat_domain::{ids::*, Username};
 
@@ -45,14 +45,31 @@ pub fn to_public(
                 None => None,
             }
          },
-         like_status:LikeStatus::NoReaction,
+         like_status: {
+            match session {
+                Some(session) => {
+                    match query_post::get_reaction(conn, post.id, session.user_id)?{
+                        Some(reaction) if reaction.like_status ==-1 => LikeStatus::Dislike,
+                        Some(reaction) if reaction.like_status == 1 => LikeStatus::Like,
+                        _ => LikeStatus::NoReaction,
+                    }
+                }
+                None => LikeStatus::NoReaction,
+            }
+        },
+
          bookmarked: {
             match session {
                 Some(session) => query_post::get_bookmark(conn,  session.user_id, post.id,)?,
                 None => false,
             }
          },
-         boosted: false,
+        boosted: {
+            match session {
+                Some(session) => query_post::get_boost(conn,  session.user_id, post.id,)?,
+                None => false,
+            }
+         },
          likes: aggregate_reactions.likes,
          dislikes: aggregate_reactions.dislikes,
          boosts: aggregate_reactions.boosts,
@@ -175,6 +192,35 @@ impl AuthorizedApiRequest for React{
                 like_status: self.like_status,
                 likes: aggregate_reactions.likes,
                 dislikes: aggregate_reactions.dislikes,
+            }),
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for Boost{
+    type Response = (StatusCode, Json<BoostOk>);
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        state: AppState,
+    )-> ApiResult<Self::Response> {
+        match self.action {
+            BoostAction::Add => {
+                uchat_query::post::boost(&mut conn, session.user_id, self.post_id, Utc::now())?;
+
+            }
+            BoostAction::Remove => {
+                uchat_query::post::delete_boost(&mut conn, session.user_id, self.post_id)?;
+                
+            }
+        }
+        
+        Ok((
+            StatusCode::OK,
+            Json(BoostOk {
+                status: self.action,
             }),
         ))
     }

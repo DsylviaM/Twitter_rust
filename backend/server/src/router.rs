@@ -9,7 +9,7 @@ trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
 LatencyUnit,
 };
 use tracing::Level;
-use uchat_endpoint::{post::endpoint::{Bookmark, NewPost, React, TrendingPosts}, user::endpoint::{CreateUser, Login}, Endpoint};
+use uchat_endpoint::{post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPosts}, user::endpoint::{CreateUser, Login}, Endpoint};
 
 use crate::{handler::{with_handler, with_public_handler}, AppState};
 
@@ -27,6 +27,8 @@ pub fn new_router(state:AppState) -> axum::Router {
     let authorized_routes = Router::new()
         .route(NewPost::URL, post(with_handler::<NewPost>))
         .route(Bookmark::URL, post(with_handler::<Bookmark>))
+        .route(Boost::URL, post(with_handler::<Boost>))
+
         .route(React::URL, post(with_handler::<React>))
         .route(TrendingPosts::URL, post(with_handler::<TrendingPosts>));
         

@@ -75,3 +75,18 @@ impl From<BookmarkAction> for bool {
         }
     }
 }
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub enum BoostAction {
+    Add,
+    Remove,
+}
+
+impl From<BoostAction> for bool {
+    fn from(value: BoostAction) -> Self {
+        match value {
+            BoostAction::Add => true,
+            BoostAction::Remove => false,
+        }
+    }
+}
