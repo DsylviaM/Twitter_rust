@@ -11,7 +11,7 @@ LatencyUnit,
 use tracing::Level;
 use uchat_endpoint::{post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPosts}, user::endpoint::{CreateUser, Login}, Endpoint};
 
-use crate::{handler::{with_handler, with_public_handler}, AppState};
+use crate::{handler::{self, with_handler, with_public_handler}, AppState};
 
 //создадим новую функцию маршрутизатора, это требует некоторого места приложения,
 // где мы вернем сюда маршрутизатор Axum
@@ -19,16 +19,22 @@ use crate::{handler::{with_handler, with_public_handler}, AppState};
 //чтобы наш первый маршрутизатор был общедоступным маршрутом, это будет те, которые всегда доступны
 //нисмотря ни на что. Если посмотреть на вторую часть get то это и есть наш обработчик(метод)
 pub fn new_router(state:AppState) -> axum::Router {
+    let img_route = {
+        use uchat_endpoint::app_url::user_content;
+        format!("{}{}", user_content::ROOT, user_content::IMAGES)
+    };
+
     let public_routes = Router::new()
     .route("/", get(move || async {"this is the root page"}))
+    .route(&format!("/{img_route}:id"), get(handler::load_image))
     .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
     .route(Login::URL, post(with_public_handler::<Login>));
+    
     // теперь маршрутизаторы по ИД пользователя
     let authorized_routes = Router::new()
         .route(NewPost::URL, post(with_handler::<NewPost>))
         .route(Bookmark::URL, post(with_handler::<Bookmark>))
         .route(Boost::URL, post(with_handler::<Boost>))
-
         .route(React::URL, post(with_handler::<React>))
         .route(TrendingPosts::URL, post(with_handler::<TrendingPosts>));
         

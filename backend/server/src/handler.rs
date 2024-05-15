@@ -1,12 +1,20 @@
-use axum::{async_trait, extract::State, response::IntoResponse, Json};
-use serde::Deserialize;
-use uchat_domain::ids::SessionId;
-use uchat_query::session;
 
-use crate::{error::ApiResult, extractor::{DbConnection, UserSession}, AppState};
+
+use std::path::PathBuf;
+
+use axum::{async_trait, body::Full, extract::{Path, State}, http::status, response::IntoResponse, Json};
+use hyper::{header, Response, StatusCode};
+use serde::Deserialize;
+use uchat_domain::ids::{ImageId, SessionId};
+use uchat_query::session;
+use uuid::Uuid;
+
+use crate::{error::{ApiError, ApiResult}, extractor::{DbConnection, UserSession}, AppState};
 
 pub mod user;
 pub mod post;
+
+const USER_CONTENT_DIR: &str = "usercontent";
 
 
 #[async_trait]
@@ -52,3 +60,55 @@ where
         {
             payload.process_request(conn, session, state).await
         }
+
+pub async fn save_image<T: AsRef<[u8]>>(id: ImageId, data: T) -> Result<(), ApiError> {
+    //tokio::fs enables async file operations 
+    //позволяет выполнять асинхронные операции с файлами
+    use tokio::fs;
+
+    let mut path = PathBuf::from(USER_CONTENT_DIR);
+    fs::create_dir_all(&path).await?;
+    path.push(id.to_string());
+    fs::write(&path, data).await?;
+
+    Ok(())
+}
+
+pub async fn load_image(
+    Path(img_id): Path<Uuid>,
+) -> Result<Response<Full<axum::body::Bytes>>, ApiError> {
+    use tokio::fs;
+
+    let mut path = PathBuf::from(USER_CONTENT_DIR);
+    path.push(img_id.to_string());
+
+    let raw = fs::read_to_string(path).await?;
+
+    //data:text/plain;basa64,SVGsbG8sIFdvcmxkIQ==
+    let(header, image_data) = raw.split_once(',').unwrap();
+    //header:
+    // data:text/plain;basa64
+    let mime = header
+        .split_once("data:")
+    // 0) data:
+    // 1) text/plain;basa64
+        .unwrap()
+        .1
+        .split_once(";base64")
+    // 0) text/plan
+    // 1) ;base64
+        .unwrap()
+        .0;
+    
+    {
+        use base64::{engine::general_purpose, Engine as _};
+        let image_data = general_purpose::STANDARD.decode(image_data).unwrap();
+        Ok(Response::builder()
+            .status(StatusCode::OK)
+            .header(header::CONTENT_TYPE, mime)
+            .body(Full::from(image_data))
+            .unwrap()
+        )
+    }
+    
+}

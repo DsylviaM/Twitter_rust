@@ -2,6 +2,7 @@ pub mod user;
 pub mod post;
 
 use serde::{Deserialize, Serialize};
+use load_dotenv::load_dotenv;
 use thiserror::Error;
 
 pub trait Endpoint {
@@ -25,6 +26,30 @@ macro_rules! route {
 #[error("{msg}")]
 pub struct RequestFailed {
     pub msg: String,
+}
+
+load_dotenv!();
+
+pub mod app_url {
+    use std::str::FromStr;
+
+    use url::Url;
+
+    pub const API_URL: &str = env!("API_URL");
+
+    pub fn domain_and(fragment: &str) -> Url {
+        Url::from_str(API_URL)
+            //"http://127.0.0.1:8070/"
+            .and_then(|url| url.join(fragment))
+            //img/happy.png
+            .unwrap()
+            //"http://127.0.0.1:8070/img/happy.png"
+        }
+
+        pub mod user_content {
+            pub const ROOT: &str = "usercontent/";
+            pub const IMAGES: &str = "img/";
+        }
 }
 
 //public routes
