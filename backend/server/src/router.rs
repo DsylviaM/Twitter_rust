@@ -1,12 +1,10 @@
 
-use axum::{http::HeaderValue, routing::{get, post}, Router};
+use axum::{extract::DefaultBodyLimit, http::HeaderValue, routing::{get, post}, Router};
 use hyper::{header::CONTENT_TYPE, Method};
 use tower::ServiceBuilder;
 
 use tower_http::{
-    cors::CorsLayer,
-trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
-LatencyUnit,
+    cors::CorsLayer, limit::RequestBodyLimitLayer, trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer}, LatencyUnit
 };
 use tracing::Level;
 use uchat_endpoint::{post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPosts}, user::endpoint::{CreateUser, Login}, Endpoint};
@@ -36,7 +34,9 @@ pub fn new_router(state:AppState) -> axum::Router {
         .route(Bookmark::URL, post(with_handler::<Bookmark>))
         .route(Boost::URL, post(with_handler::<Boost>))
         .route(React::URL, post(with_handler::<React>))
-        .route(TrendingPosts::URL, post(with_handler::<TrendingPosts>));
+        .route(TrendingPosts::URL, post(with_handler::<TrendingPosts>))
+        .layer(DefaultBodyLimit::disable())
+        .layer(RequestBodyLimitLayer::new(8 * 8 *  1024 * 1024));
         
     //затем настоящий маршрутизатор, который мы возвращаем
     Router::new()
