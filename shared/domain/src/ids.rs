@@ -76,3 +76,4 @@ macro_rules! new_id {
     new_id!(SessionId);
     new_id!(PostId);
     new_id!(ImageId);
+    new_id!(PollChoiceId);
