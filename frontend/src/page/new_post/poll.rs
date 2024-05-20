@@ -100,6 +100,72 @@ pub fn HeadlineInput(cx: Scope, page_state: UseRef<PageState>) -> Element{
     })
 }
 
+#[inline_props]
+pub fn PollChoices(cx: Scope, page_state: UseRef<PageState>) -> Element{
+    let choices = page_state
+        .read()
+        .poll_choices
+        .iter()
+        .map(|(&key, choice)| {
+            let choice = choice.clone();
+            let max_chars = PollChoiceDescription::MAX_CHARS;
+            let wrong_len = maybe_class!(
+                "err-text-color",
+                PollChoiceDescription::new(&choice).is_err()
+            );
+            rsx! {
+                li {
+                    key: "{key}",
+                    div {
+                        class: "grid grid-cols-[1fr_3rem_3rem] w-full gap-2 items-center h-8",
+                        input {
+                            class: "input-field",
+                            placeholder: "Choice Description",
+                            oninput: move |ev| {
+                                page_state.with_mut(|state| state.replace_choice(key, &ev.data.value))
+                            },
+                            value: "{choice}",
+                        }
+                        div {
+                            class: "text-right {wrong_len}",
+                            "{choice.len()}/{max_chars}"
+                        }
+                        button {
+                            class: "btn p-0 h-full bg-red-700",
+                            prevent_default: "onclick",
+                            onclick: move |_| {
+                                page_state.with_mut(|state| state.poll_choices.remove(&key));
+                            },
+                            "X"
+                        }
+                    }
+                }
+            }
+
+        }).collect::<Vec<LazyNodes>>();
+
+        cx.render(rsx! {
+            div{
+                class: "flex flex-col gap-2",
+                "Poll Choices",
+                ol {
+                    class: "list-decimal ml-4 flex flex-col gap-2",
+                    choices.into_iter()
+                },
+                div {
+                    class: "flex flex-row justify-end",
+                    button {
+                        class: "btn w-12",
+                        prevent_default: "onclick",
+                        onclick: move |_| {
+                            page_state.with_mut(|state| state.push_choice(""))
+                        },
+                        "+"
+                    }
+                }
+            }
+        })
+}
 
 pub fn NewPoll(cx:Scope) -> Element {
     let page_state = use_ref(cx, PageState::default);
@@ -171,8 +237,8 @@ pub fn NewPoll(cx:Scope) -> Element {
             class: "flex flex-col gap-4",
             onsubmit: form_onsubmit,
             prevent_default: "onsubmit",
-            HeadlineInput{ page_state: page_state.clone()},
-            //poll choices
+            HeadlineInput { page_state: page_state.clone()},
+            PollChoices { page_state: page_state.clone()},
             button {
                 class: "btn {submit_btn_style}",
                 r#type: "submit",
