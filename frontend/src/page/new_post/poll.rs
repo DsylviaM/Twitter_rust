@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::{fetch_json, prelude::*, util::{self, api_client::{self, ApiClient}}};
 use chrono::Duration;
@@ -13,7 +13,7 @@ use uchat_endpoint::post::types::{NewPostOptions, Poll, PollChoice};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PageState {
     pub headline: String,
-    pub poll_choices: HashMap<usize, String>,
+    pub poll_choices: BTreeMap<usize, String>,
     pub next_id: usize
 }
 
@@ -22,7 +22,7 @@ impl Default for PageState {
         Self {
             headline: "".to_string(),
             poll_choices: {
-                let mut map = HashMap::new();
+                let mut map = BTreeMap::new();
                 map.insert(0, "".to_string());
                 map.insert(1, "".to_string());
                 map
@@ -245,7 +245,7 @@ pub fn NewPoll(cx:Scope) -> Element {
                 disabled: !page_state.read().can_submit(),
                 "Post"
             }
-             tr{"g"}tr{"g"}tr{"g"}tr{"g"}
+            //  tr{"g"}tr{"g"}tr{"g"}tr{"g"}
         }
     })
 }

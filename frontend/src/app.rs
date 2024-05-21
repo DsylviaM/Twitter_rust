@@ -31,6 +31,7 @@ pub fn App(cx: Scope) -> Element {
                 Route{ to: page::POST_NEW_CHAT, page::NewChat {}},
                 Route{ to: page::POST_NEW_IMAGE, page::NewImage {}},
                 Route{ to: page::POST_TRENDING, page::Trending {}},
+                Route{ to: page::POST_NEW_POLL, page::NewPoll {}},
 
             }
             ToastRoot{ toaster: toaster },
