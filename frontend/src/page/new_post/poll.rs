@@ -169,6 +169,7 @@ pub fn PollChoices(cx: Scope, page_state: UseRef<PageState>) -> Element{
 
 pub fn NewPoll(cx:Scope) -> Element {
     let page_state = use_ref(cx, PageState::default);
+    let is_invalid = !page_state.read().can_submit();
     let router = use_router(cx);
     let toaster = use_toaster(cx);
     let api_client = ApiClient::global();
@@ -177,7 +178,9 @@ pub fn NewPoll(cx:Scope) -> Element {
         &cx,
         [api_client, page_state, toaster, router],
         move |_| async move {
-        use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
+            use uchat_domain::post::PollHeadline;
+            use uchat_endpoint::post::endpoint::{NewPost, NewPostOk};
+            use uchat_endpoint::post::types::Poll;
 
         let request = NewPost {
             content: Poll {
@@ -186,26 +189,17 @@ pub fn NewPoll(cx:Scope) -> Element {
                     PollHeadline::new(headline).unwrap()
                 },
                 choices: {
-                    let sorted_choices = {
-                        let mut choices = page_state
-                            .read()
-                            .poll_choices
-                            .iter()
-                            .map(|(id, choice)| (*id, choice.clone()))
-                            .collect::<Vec<(usize, String)>>();
-                        choices.sort_unstable_by(|a,b| a.0.partial_cmp(&b.0).unwrap());
-                        choices
-                    };
-                    sorted_choices
-                        .iter()
-                        .map(|(_, choice)|{
+                    page_state
+                        .read()
+                        .poll_choices
+                        .values()
+                        .map(|choice|{
                             let id = PollChoiceId::new();
-                            let choice = PollChoice {
+                            PollChoice {
                                 id,
                                 num_votes: 0,
                                 description: PollChoiceDescription::new(choice).unwrap(),
-                            };
-                            choice
+                            }
                         })
                         .collect::<Vec<PollChoice>>()
                     },
