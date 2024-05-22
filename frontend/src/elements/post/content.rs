@@ -7,7 +7,7 @@ use dioxus::prelude::*;
 use itertools::Itertools;
 use uchat_domain::ids::{PollChoiceId, PostId};
 use uchat_endpoint::post::types::{
-    Chat as EndpointChat, Image as EndpointImage, ImageKind, Poll as EndpointPoll, PollChoice, PublicPost};
+    Chat as EndpointChat, Image as EndpointImage, ImageKind, Poll as EndpointPoll, PollChoice, PublicPost, VoteCast};
 
 #[inline_props]
 pub fn Chat<'a>(
@@ -61,6 +61,34 @@ pub fn Poll<'a>(cx: Scope<'a>, post_id: PostId, content: & 'a EndpointPoll) -> E
     let toaster = use_toaster(cx);
     let api_client = ApiClient::global();
 
+    //
+    let vote_onclick = async_handler!(
+        &cx,
+        [api_client, toaster],
+        move |post_id, choice_id| async move {
+            use uchat_endpoint::post::endpoint::{Vote, VoteOk};
+
+            let request = Vote { post_id, choice_id };
+
+            match fetch_json!(<VoteOk>, api_client, request) {
+                Ok(res) => {
+                    match res.cast {
+                        VoteCast::Yes => toaster.write().succsess("Vote cast!", chrono::Duration::seconds(3)),
+                        VoteCast::AlreadyVoted => toaster.write().info("Already voted", chrono::Duration::seconds(5)),
+                    }
+
+                }
+                Err(e) => toaster.write().error(
+                    format!("Failed to cast vote: {}", e),
+                    chrono::Duration::seconds(3),
+                ),
+            }
+        }
+    );
+
+    //
+
+
     let total_votes = content
         .choices
         .iter()
@@ -96,7 +124,7 @@ pub fn Poll<'a>(cx: Scope<'a>, post_id: PostId, content: & 'a EndpointPoll) -> E
             li {
                 key:"{choice.id.to_string()}",
                 class: "relative p-2 m-2 cursor-pointer grid grid-cols-[3rem_1fr] border rounded border-slate-400",
-                onclick: move |_| (),
+                onclick: move |_| vote_onclick(*post_id, choice.id),
                 div {
                     class: "absolute left-0 {background_color} h-full rounded z-[-1]",
                     style: "width: {percent}",

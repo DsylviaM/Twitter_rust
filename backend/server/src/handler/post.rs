@@ -5,7 +5,7 @@ use chrono::{Duration, Utc};
 use hyper::StatusCode;
 use rand::rngs;
 use tracing::info;
-use uchat_endpoint::{app_url::{self, user_content}, post::{endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPosts, TrendingPostsOk}, types::{BookmarkAction, BoostAction, ImageKind, LikeStatus, PublicPost}}, user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, RequestFailed};
+use uchat_endpoint::{app_url::{self, user_content}, post::{endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPosts, TrendingPostsOk, Vote, VoteOk}, types::{BookmarkAction, BoostAction, ImageKind, LikeStatus, PublicPost}}, user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, RequestFailed};
 use uchat_query::{post::Post, session::{self, Session}, AsyncConnection};
 use uchat_domain::{ids::*, Username};
 
@@ -261,5 +261,19 @@ impl AuthorizedApiRequest for Boost{
                 status: self.action,
             }),
         ))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for Vote{
+    type Response = (StatusCode, Json<VoteOk>);
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        state: AppState,
+    )-> ApiResult<Self::Response> {
+        let cast = uchat_query::post::vote(&mut conn, session.user_id, self.post_id, self.choice_id)?;
+        Ok((StatusCode::OK, Json(VoteOk{ cast })))
     }
 }
