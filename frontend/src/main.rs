@@ -43,6 +43,8 @@ mod prelude {
 
     pub use crate::elements::toaster::use_toaster;
     pub use crate::elements::post::use_post_manager;
+    pub use crate::elements::appbar::{self,Appbar, AppbarImgButton};
+
 
     pub use dioxus_router::{use_route, use_router};
 }
