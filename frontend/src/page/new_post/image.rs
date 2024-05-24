@@ -34,6 +34,7 @@ pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element{
     let toaster = use_toaster(cx);
 
     cx.render(rsx! {
+        
         div {
             label {
                 r#for: "image-input",
@@ -178,6 +179,35 @@ pub fn NewImage(cx:Scope) -> Element {
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
 
     cx.render(rsx! {
+        Appbar {
+            title: "New Image",
+            AppbarImgButton {
+                click_handler: move |_| router.replace_route(page::POST_NEW_CHAT, None, None),
+                img: "/static/icons/icon-messages.svg",
+                label: "Chat",
+                title: "Post a new chat",
+            },
+            AppbarImgButton{
+                click_handler: move |_| (),
+                img: "/static/icons/icon-image.svg",
+                label: "Image",
+                disabled: true,
+                title: "Post a new chat",
+                append_class: appbar::BUTTON_SELECTED,
+            },
+            AppbarImgButton{
+                click_handler: move |_| router.replace_route(page::POST_NEW_POLL, None, None),
+                img: "/static/icons/icon-poll.svg",
+                label: "Poll",
+                title: "Post a new poll",
+            },
+            AppbarImgButton{
+                click_handler: move |_| router.pop_route(),
+                img: "/static/icons/icon-back.svg",
+                label: "Back",
+                title: "Go to the previous page",
+            }
+        },
         form {
             class: "flex flex-col gap-4",
             onsubmit: form_onsubmit,
