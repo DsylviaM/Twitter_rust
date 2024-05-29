@@ -7,7 +7,7 @@ use tower_http::{
     cors::CorsLayer, limit::RequestBodyLimitLayer, trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer}, LatencyUnit
 };
 use tracing::Level;
-use uchat_endpoint::{post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPosts, Vote}, user::endpoint::{CreateUser, Login}, Endpoint};
+use uchat_endpoint::{post::endpoint::{Bookmark, BookmarkedPosts, Boost, HomePosts, LikedPosts, NewPost, React, TrendingPosts, Vote}, user::endpoint::{CreateUser, Login}, Endpoint};
 
 use crate::{handler::{self, with_handler, with_public_handler}, AppState};
 
@@ -36,6 +36,9 @@ pub fn new_router(state:AppState) -> axum::Router {
         .route(Vote::URL, post(with_handler::<Vote>))
         .route(React::URL, post(with_handler::<React>))
         .route(TrendingPosts::URL, post(with_handler::<TrendingPosts>))
+        .route(HomePosts::URL, post(with_handler::<HomePosts>))
+        .route(LikedPosts::URL, post(with_handler::<LikedPosts>))
+        .route(BookmarkedPosts::URL, post(with_handler::<BookmarkedPosts>))
         .layer(DefaultBodyLimit::disable())
         .layer(RequestBodyLimitLayer::new(8 * 8 *  1024 * 1024));
         

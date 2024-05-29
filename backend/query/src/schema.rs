@@ -86,6 +86,7 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(followers -> users (follows));
 diesel::joinable!(bookmarks -> posts (post_id));
 diesel::joinable!(bookmarks -> users (user_id));
 diesel::joinable!(boosts -> posts (post_id));
