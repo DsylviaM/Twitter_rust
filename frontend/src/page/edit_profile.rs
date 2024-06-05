@@ -1,7 +1,8 @@
 #![allow(non_snake_case)]
 
-use crate::{elements::keyed_notification_box::KeyedNotifications, prelude::*, util};
+use crate::{elements::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox}, prelude::*, util};
 use dioxus::prelude::*;
+use uchat_domain::UserFacingError;
 use web_sys::HtmlInputElement;
 
 #[derive(Clone, Debug)]
@@ -20,6 +21,159 @@ pub struct PageState {
     password_confirmation: String,
     profile_image: Option<PreviewImageData>,
 }
+
+#[inline_props]
+pub fn PasswordInput(cx: Scope, state: UseRef<PageState>) -> Element{
+    use uchat_domain::user::Password;
+
+    let check_password_mismatch = move || {
+        let password_matches = state.with(|state| state.password == state.password_confirmation);
+        match password_matches {
+            true => state.with_mut(|state| state.form_errors.remove("password-mismatch")),
+            false => state.with_mut(|state| state.form_errors.set("password-mismatch", "Passwords must match")),
+        }
+    };
+
+    cx.render(rsx! {
+        fieldset {
+            class: "fieldset",
+            legend { "Set new password" },
+            div {
+                class: "flex flex-row w-full gap-2",
+                div {
+                    label {
+                        r#for: "password",
+                        "Password,"
+                    },
+                    input {
+                        id: "password",
+                        class: "input_field",
+                        r#type: "password",
+                        placeholder: "Password",
+                        value: "{state.read().password}",
+                        oninput: move |ev| {
+                            match Password::new(&ev.value) {
+                                Ok(_) => state.with_mut(|state| state.form_errors.remove("bad-password")),
+                                Err(e) => state.with_mut(|state| state.form_errors.set("bad-password", e.formatted_error())),
+
+                            }
+                            state.with_mut(|state| state.password = ev.value.clone());
+                            state.with_mut(|state| state.password_confirmation = "".to_string());
+
+                            if state.with(|state| state.password.is_empty()) {
+                                state.with_mut(|state| state.form_errors.remove("bad-password"));
+                                state.with_mut(|state| state.form_errors.remove("password-mismatch"));
+                            } else {
+                                check_password_mismatch();
+                            }
+                        }
+                    }
+                }
+                div {
+                    label {
+                        r#for: "password-confirm",
+                        "Confirm,"
+                    },
+                    input {
+                        id: "password-confirm",
+                        class: "input_field",
+                        r#type: "password",
+                        placeholder: "Confirm",
+                        value: "{state.read().password_confirmation}",
+                        oninput: move |ev| {
+                            state.with_mut(|state| state.password_confirmation = ev.value.clone());
+                            check_password_mismatch();
+                        }
+                }
+            }
+        }
+    }
+    })
+}
+
+#[inline_props]
+pub fn EmailInput(cx: Scope, page_state: UseRef<PageState>) -> Element{
+    use uchat_domain::user::Email;
+
+    cx.render(rsx!{
+        div {
+            label {
+                r#for: "email",
+                div {
+                    class: "flex flex-row justify-between",
+                    span {"Email Address"}
+                }
+            },
+            input{
+                class: "input-field",
+                id: "email",
+                placeholder: "Email Address",
+                value: "{page_state.read().email}",
+                oninput: move |ev| {
+                    match Email::new(&ev.value) {
+                        Ok(_) => {
+                            page_state.with_mut(|state| state.form_errors.remove("bad-email"));
+                            
+                        }
+                        Err(e) => {
+                            page_state.with_mut(|state| state.form_errors.set("bad-email", e.formatted_error()));
+                        }
+
+                    }
+                    page_state.with_mut(|state| state.email = ev.value.clone());
+                }
+            }
+        }
+    })
+}
+
+#[inline_props]
+pub fn DisplayNameInput(cx: Scope, page_state: UseRef<PageState>) -> Element{
+    use uchat_domain::user::DisplayName;
+
+    let max_chars = DisplayName::MAX_CHARS;
+
+    let wrong_len = maybe_class!(
+        "err-text-color",
+        page_state.read().display_name.len() > max_chars
+    );
+
+    cx.render(rsx!{
+        div {
+            label {
+                r#for: "display-name",
+                div {
+                    class: "flex flex-row justify-between",
+                    span {"Display Name"},
+                    span {
+                        class: "text-right {wrong_len}",
+                        "{page_state.read().display_name.len()}/{max_chars}",
+                    }
+                }
+            },
+            input{
+                id: "display-name",
+                class: "input-field",
+                placeholder: "Display Name",
+                value: "{page_state.read().display_name}",
+                oninput: move |ev| {
+                    match DisplayName::new(&ev.value) {
+                        Ok(_) => {
+                            page_state.with_mut(|state| state.form_errors.remove("bad-displayname"));
+                            
+                        }
+                        Err(e) => {
+                            page_state.with_mut(|state| state.form_errors.set("bad-displayname", e.formatted_error()));
+                        }
+
+                    }
+                    page_state.with_mut(|state| state.display_name = ev.value.clone());
+                }
+            }
+        }
+    })
+}
+
 
 #[inline_props]
 pub fn ImageInput(cx: Scope, page_state: UseRef<PageState>) -> Element{
@@ -97,6 +251,12 @@ pub fn EditProfile(cx:Scope) -> Element {
 
             ImagePreview{ page_state: page_state.clone() },
             ImageInput { page_state: page_state.clone() },
+            DisplayNameInput { page_state: page_state.clone() }
+            EmailInput {page_state: page_state.clone() },
+            PasswordInput {state: page_state.clone() },
+
+
+            KeyedNotificationBox { notifications: page_state.clone().read().form_errors.clone() },
 
             div {
                 class: "flex flex-row justify-end gap-3",
