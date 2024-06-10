@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::{elements::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox}, prelude::*, util};
+use crate::{elements::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox}, prelude::*, util::{self}};
 use dioxus::prelude::*;
 use uchat_domain::UserFacingError;
 use web_sys::HtmlInputElement;
@@ -23,46 +23,46 @@ pub struct PageState {
 }
 
 #[inline_props]
-pub fn PasswordInput(cx: Scope, state: UseRef<PageState>) -> Element{
+pub fn PasswordInput(cx: Scope, page_state: UseRef<PageState>) -> Element{
     use uchat_domain::user::Password;
 
     let check_password_mismatch = move || {
-        let password_matches = state.with(|state| state.password == state.password_confirmation);
+        let password_matches = page_state.with(|state| state.password == state.password_confirmation);
         match password_matches {
-            true => state.with_mut(|state| state.form_errors.remove("password-mismatch")),
-            false => state.with_mut(|state| state.form_errors.set("password-mismatch", "Passwords must match")),
+            true => page_state.with_mut(|state| state.form_errors.remove("password-mismatch")),
+            false => page_state.with_mut(|state| state.form_errors.set("password-mismatch", "Passwords must match")),
         }
     };
 
     cx.render(rsx! {
         fieldset {
             class: "fieldset",
-            legend { "Set new password" },
+            legend { "Set new password" }
             div {
                 class: "flex flex-row w-full gap-2",
                 div {
                     label {
                         r#for: "password",
-                        "Password,"
-                    },
+                        "Password "
+                    }
                     input {
                         id: "password",
-                        class: "input_field",
+                        class: "input-field",
                         r#type: "password",
                         placeholder: "Password",
-                        value: "{state.read().password}",
+                        value: "{page_state.read().password}",
                         oninput: move |ev| {
                             match Password::new(&ev.value) {
-                                Ok(_) => state.with_mut(|state| state.form_errors.remove("bad-password")),
-                                Err(e) => state.with_mut(|state| state.form_errors.set("bad-password", e.formatted_error())),
+                                Ok(_) => page_state.with_mut(|state| state.form_errors.remove("bad-password")),
+                                Err(e) => page_state.with_mut(|state| state.form_errors.set("bad-password", e.formatted_error())),
 
                             }
-                            state.with_mut(|state| state.password = ev.value.clone());
-                            state.with_mut(|state| state.password_confirmation = "".to_string());
+                            page_state.with_mut(|state| state.password = ev.value.clone());
+                            page_state.with_mut(|state| state.password_confirmation = "".to_string());
 
-                            if state.with(|state| state.password.is_empty()) {
-                                state.with_mut(|state| state.form_errors.remove("bad-password"));
-                                state.with_mut(|state| state.form_errors.remove("password-mismatch"));
+                            if page_state.with(|state| state.password.is_empty()) {
+                                page_state.with_mut(|state| state.form_errors.remove("bad-password"));
+                                page_state.with_mut(|state| state.form_errors.remove("password-mismatch"));
                             } else {
                                 check_password_mismatch();
                             }
@@ -72,16 +72,16 @@ pub fn PasswordInput(cx: Scope, state: UseRef<PageState>) -> Element{
                 div {
                     label {
                         r#for: "password-confirm",
-                        "Confirm,"
-                    },
+                        "Confirm "
+                    }
                     input {
                         id: "password-confirm",
-                        class: "input_field",
+                        class: "input-field",
                         r#type: "password",
                         placeholder: "Confirm",
-                        value: "{state.read().password_confirmation}",
+                        value: "{page_state.read().password_confirmation}",
                         oninput: move |ev| {
-                            state.with_mut(|state| state.password_confirmation = ev.value.clone());
+                            page_state.with_mut(|state| state.password_confirmation = ev.value.clone());
                             check_password_mismatch();
                         }
                 }
@@ -103,28 +103,36 @@ pub fn EmailInput(cx: Scope, page_state: UseRef<PageState>) -> Element{
                     class: "flex flex-row justify-between",
                     span {"Email Address"}
                 }
-            },
-            input{
+            }
+            input {
                 class: "input-field",
                 id: "email",
                 placeholder: "Email Address",
                 value: "{page_state.read().email}",
                 oninput: move |ev| {
-                    match Email::new(&ev.value) {
+                    page_state.with_mut(|state| state.email = ev.value.clone());
+                    if ev.value.is_empty() {
+                        page_state.with_mut(|state| state.form_errors.remove("bad-email"));
+                        return;
+                    }
+                    //todo!("")
+                     match Email::new(&ev.value) {
+                        
                         Ok(_) => {
+                            //todo!("")
                             page_state.with_mut(|state| state.form_errors.remove("bad-email"));
                             
                         }
                         Err(e) => {
+                            //todo!("")
                             page_state.with_mut(|state| state.form_errors.set("bad-email", e.formatted_error()));
                         }
-
                     }
                     page_state.with_mut(|state| state.email = ev.value.clone());
-                }
             }
         }
-    })
+    }
+})
 }
 
 #[inline_props]
@@ -241,8 +249,67 @@ pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element{
 }
 
 pub fn EditProfile(cx:Scope) -> Element {
+    let api_client = ApiClient::global();
     let page_state = use_ref(cx,PageState::default);
     let router = use_router(cx);
+    let toaster = use_toaster(cx);
+
+    let form_onsubmit =
+    async_handler!(&cx, [api_client, page_state, toaster, router], move |_| async move {
+                use uchat_endpoint::user::endpoint::{UpdateProfile, UpdateProfileOk};
+                use uchat_endpoint::Update;
+                    let request_data = {
+                        use uchat_domain::user::Password;
+                        UpdateProfile {
+                            display_name: {
+                                let name = page_state.with(|state| state.display_name.clone());
+                                if name.is_empty() {
+                                    Update::SetNull
+                                } else {
+                                    Update::Change(name)
+                                }
+                            },
+                            email: {
+                                let email = page_state.with(|state| state.email.clone());
+                                if email.is_empty() {
+                                    Update::SetNull
+                                } else {
+                                    Update::Change(email)
+                                }
+                            },
+                            password: {
+                                let password = page_state.with(|state| state.password.clone());
+                                if password.is_empty() {
+                                    Update::NoChange
+                                } else {
+                                    Update::Change(Password::new(password).unwrap())
+                                }
+                            },
+                            profile_image: {
+                                let profile_image = page_state.with(|state| state.profile_image.clone());
+                                match profile_image {
+                                    Some(PreviewImageData::DataUrl(data)) => Update::Change(data),
+                                    Some(PreviewImageData::Remote(_)) => Update::NoChange,
+                                    None => Update::SetNull,
+                                }
+                            },
+                        }
+                    };
+                let response = fetch_json!(<UpdateProfileOk>, api_client, request_data);
+                match response {
+                    Ok(res)=> {
+                        toaster.write().succsess("Profile update", chrono::Duration::seconds(3));
+                        router.navigate_to(crate::page::HOME)
+                    }
+                    Err(e) => {
+                        toaster.write().error(format!("Failed to update profile:{}",e),chrono::Duration::seconds(3));
+                    }
+                }
+            }
+        );
+
+    let disable_submit = page_state.with(|state| state.form_errors.has_message());
+    let submit_btn_style = maybe_class!("btn-disabled",disable_submit);
 
     cx.render(rsx! {
         form {
@@ -251,15 +318,18 @@ pub fn EditProfile(cx:Scope) -> Element {
 
             ImagePreview{ page_state: page_state.clone() },
             ImageInput { page_state: page_state.clone() },
-            DisplayNameInput { page_state: page_state.clone() }
+           
+            DisplayNameInput { page_state: page_state.clone() },
+            
             EmailInput {page_state: page_state.clone() },
-            PasswordInput {state: page_state.clone() },
+          
+            PasswordInput {page_state: page_state.clone() },
 
 
-            KeyedNotificationBox { notifications: page_state.clone().read().form_errors.clone() },
+             KeyedNotificationBox { notifications: page_state.clone().read().form_errors.clone() },
 
             div {
-                class: "flex flex-row justify-end gap-3",
+                class: "flex justify-end gap-3",
                 button {
                     class: "btn",
                     prevent_default: "onclick",
@@ -267,8 +337,9 @@ pub fn EditProfile(cx:Scope) -> Element {
                     "Cancel"
                 },
                 button {
-                    class: "btn",
+                    class: "btn {submit_btn_style}",
                     r#type: "submit",
+                    disabled: disable_submit,
                     "Submit"
                 },
             }

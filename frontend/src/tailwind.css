@@ -47,7 +47,7 @@
         @apply object-cover rounded-md w-28 h-28
     }
 
-    .fieldset {
+    /* .fieldset {
         @apply p-3 border-2 border-solid border-slate-300;
-    }
+    } */
 }

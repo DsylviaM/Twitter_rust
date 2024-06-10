@@ -1,6 +1,12 @@
-use nutype::nutype;
+// use nutype::nutype;
 use once_cell::sync::OnceCell;
 use regex::Regex;
+use nutype::nutype; // Импортируем сам атрибут nutype
+
+
+// use nutype::validators::function; // Импортируем валидатор function 
+
+
 
 use serde::{Deserialize, Serialize};
 
@@ -80,16 +86,19 @@ impl EmailRegex {
 }
 
 fn is_valid_email(email: &str) -> bool {
-    let email_regex = EMAIL_REGEX.get_or_init(EmailRegex::init);
+     let email_regex = EMAIL_REGEX.get_or_init(EmailRegex::init);
 
-    email_regex.is_valid(email)
+     email_regex.is_valid(email)
+   // todo!();
 }
 
 #[nutype(
-    validate(predicate = is_valid_email),
+    validate(predicate = is_valid_email), 
     derive(AsRef, Clone, Debug, Serialize, Deserialize, PartialEq)
 )]
 pub struct Email(String);
+
+
 
 // NOTE The nutype validate macro automatically generates the EmailError enum
 impl UserFacingError for EmailError {
