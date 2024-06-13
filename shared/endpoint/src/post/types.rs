@@ -104,7 +104,7 @@ pub struct  PublicPost {
     pub boosts: i64,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub enum BookmarkAction {
     Add,
     Remove,

@@ -70,6 +70,8 @@ route!("/post/bookmarked" => post::endpoint::BookmarkedPosts);
 route!("/profile/me" => user::endpoint::GetMyProfile);
 route!("/profile/update" => user::endpoint::UpdateProfile);
 route!("/profile/view" => user::endpoint::ViewProfile);
+route!("/user/follow" => user::endpoint::FollowUser);
+
 
 
 
