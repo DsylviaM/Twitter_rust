@@ -1,9 +1,13 @@
 #![allow(non_snake_case)]
 
-use crate::{elements::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox}, prelude::*, util::{self}};
+use crate::{
+    elements::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox}, prelude::*, util
+};
+// use crate::components::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox};
 use dioxus::prelude::*;
 use uchat_domain::UserFacingError;
 use web_sys::HtmlInputElement;
+
 
 #[derive(Clone, Debug)]
 enum PreviewImageData {
@@ -250,14 +254,43 @@ pub fn ImagePreview(cx: Scope, page_state: UseRef<PageState>) -> Element{
 
 pub fn EditProfile(cx:Scope) -> Element {
     let api_client = ApiClient::global();
-    let page_state = use_ref(cx,PageState::default);
+    let page_state = use_ref(cx, PageState::default);
     let router = use_router(cx);
     let toaster = use_toaster(cx);
 
+    let _fetch_profile = {
+        to_owned![api_client, toaster, page_state];
+        use_future(cx, (), |_| async move{
+            use uchat_endpoint::user::endpoint::{GetMyProfile, GetMyProfileOk};
+            toaster
+                .write()
+                .info("Retrieving profile...", chrono::Duration::seconds(3));
+        let response = fetch_json!(<GetMyProfileOk>, api_client, GetMyProfile);
+        match response {
+            Ok(res) => page_state.with_mut(|state|{
+                    state.display_name = res.display_name.unwrap_or_default();
+                    state.email = res.email.unwrap_or_default();
+                    state.profile_image = res
+                                .profile_image
+                                .map(|img| PreviewImageData::Remote(img.to_string()));
+                }),
+            
+            Err(e) => toaster.write().error(
+                format!("Failed to retrieve profile: {e}"),
+                chrono::Duration::seconds(3),
+            ),
+        }
+    })
+};
+ 
     let form_onsubmit =
-    async_handler!(&cx, [api_client, page_state, toaster, router], move |_| async move {
+    async_handler!(
+        &cx,
+        [api_client, page_state, toaster, router],
+        move |_| async move {
                 use uchat_endpoint::user::endpoint::{UpdateProfile, UpdateProfileOk};
                 use uchat_endpoint::Update;
+                
                     let request_data = {
                         use uchat_domain::user::Password;
                         UpdateProfile {
@@ -312,8 +345,18 @@ pub fn EditProfile(cx:Scope) -> Element {
     let submit_btn_style = maybe_class!("btn-disabled",disable_submit);
 
     cx.render(rsx! {
+        Appbar {
+            title: "Edit Profile",
+            AppbarImgButton{
+                click_handler: move |_| router.pop_route(),
+                img: "/static/icons/icon-back.svg",
+                label: "Back",
+                title: "Go to the previous page",
+            }
+        },
         form {
             class: "flex flex-col w-full gap-3",
+            onsubmit: form_onsubmit,
             prevent_default: "onsubmit",
 
             ImagePreview{ page_state: page_state.clone() },
@@ -326,7 +369,7 @@ pub fn EditProfile(cx:Scope) -> Element {
             PasswordInput {page_state: page_state.clone() },
 
 
-             KeyedNotificationBox { notifications: page_state.clone().read().form_errors.clone() },
+            KeyedNotificationBox { notifications: page_state.clone().read().form_errors.clone() },
 
             div {
                 class: "flex justify-end gap-3",

@@ -69,6 +69,8 @@ route!("/post/liked" => post::endpoint::LikedPosts);
 route!("/post/bookmarked" => post::endpoint::BookmarkedPosts);
 route!("/profile/me" => user::endpoint::GetMyProfile);
 route!("/profile/update" => user::endpoint::UpdateProfile);
+route!("/profile/view" => user::endpoint::ViewProfile);
+
 
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
