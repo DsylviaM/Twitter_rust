@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use uchat_domain::UserFacingError;
 
 
-use crate::{elements::{keyed_notification_box::KeyedNotifications, KeyedNotificationBox}, fetch_json, maybe_class, prelude::*, util::api_client::{self, ApiClient}};
+use crate::{elements::{keyed_notification_box::KeyedNotifications, local_profile, KeyedNotificationBox}, fetch_json, maybe_class, prelude::*, util::api_client::{self, ApiClient}};
 
 pub struct  PageState{
     username: UseState<String>,
@@ -84,9 +84,10 @@ pub fn Register(cx: Scope) -> Element{
     let page_state = PageState::new(cx);
     let page_state = use_ref(cx, || page_state);
     let router = use_router(cx);
+    let local_profile = use_local_profile(cx);
 
     let form_onsubmit = 
-        async_handler!(&cx, [api_client, page_state, router],
+        async_handler!(&cx, [api_client, page_state, router, local_profile],
             move |_| async move {
                 use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
                 let request_data = {
@@ -110,6 +111,7 @@ pub fn Register(cx: Scope) -> Element{
                             res.session_id,
                             res.session_expires
                         );
+                        local_profile.write().user_id = Some(res.user_id);
                         router.navigate_to(page::HOME)
                     },
                     Err(e) => (),
