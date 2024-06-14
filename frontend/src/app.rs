@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-use crate::{elements::{local_profile, post::PostManager, toaster::{ToastRoot, Toaster}, Navbar}, prelude::*, util::api_client};
+use crate::{elements::{local_profile, post::PostManager, sidebar::SidebarManager, toaster::{ToastRoot, Toaster}, Navbar}, prelude::*, util::api_client};
 
 use dioxus_router::{Route, Router};
 use fermi::{use_init_atom_root, AtomRef};
@@ -10,6 +10,7 @@ use fermi::{use_init_atom_root, AtomRef};
 pub static TOASTER: AtomRef<Toaster> = |_| Toaster::default();
 pub static POSTMANAGER: AtomRef<PostManager> = |_| PostManager::default();
 pub static LOCAL_PROFILE: AtomRef<LocalProfile> = |_| LocalProfile::default();
+pub static SIDEBAR: AtomRef<SidebarManager> = |_| SidebarManager::default();
 
 pub fn Init(cx:Scope) -> Element {
     let api_client = ApiClient::global();
@@ -49,6 +50,7 @@ pub fn App(cx: Scope) -> Element {
     cx.render (rsx! {
         Router {
             Init {},
+            Sidebar {},
             main{
                 class: "
                 max-w-[var(--content-max-width)]

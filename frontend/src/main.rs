@@ -46,6 +46,7 @@ mod prelude {
     pub use crate::elements::appbar::{self,Appbar, AppbarImgButton};
     pub use crate::elements::post::PublicPostEntry;
     pub use crate::elements::local_profile::{use_local_profile, LocalProfile};
+    pub use crate::elements::sidebar::{use_sidebar, SidebarManager, Sidebar};
 
 
     pub use dioxus_router::{use_route, use_router};
