@@ -13,7 +13,7 @@ pub mod actionbar;
 pub mod quick_respond;
 
 pub fn use_post_manager(cx: &ScopeState) -> &UseAtomRef<PostManager> {
-    use_atom_ref(cx, crate::app::POSTMANAGER)
+    use_atom_ref(cx, crate::app::POST_MANAGER)
 }
 
 #[derive(Default)]

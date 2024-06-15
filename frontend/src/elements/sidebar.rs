@@ -54,6 +54,13 @@ pub fn Sidebar(cx: Scope) -> Element {
         }
     };
 
+    let read_local_profile = local_profile.read();
+    let profile_img_src = read_local_profile
+        .image
+        .as_ref()
+        .map(|url| url.as_str())
+        .unwrap_or_else(|| "");
+
     cx.render(rsx! {
         OverLay,
         div {
@@ -62,12 +69,34 @@ pub fn Sidebar(cx: Scope) -> Element {
             flex flex-col
             navbar-bg-color transition-[width] duration-300",
             a {
+                class: "flex flex-row justify-center py-5 cursor-pointer",
+                onclick: move |_| {
+                    sidebar.write().close();
+                    if let Some(id) = local_profile.read().user_id {
+                        let url = crate::page::profile_view(id);
+                        router.navigate_to(&url);
+                    }
+                },
+                img {
+                    class: "profile-portrait-lg",
+                    src: "{profile_img_src}",
+                }
+            }
+            a {
                 class: "sidebar-navlink border-t",
                 onclick: move |_| {
                     sidebar.write().close();
                     router.navigate_to(page::PROFILE_EDIT);
                 },
                 "Edit Profile"
+            }
+            a {
+                class: "sidebar-navlink",
+                onclick: move |_| {
+                    sidebar.write().close();
+                    router.navigate_to(page::HOME_BOOKMARKED);
+                },
+                "Bookmarks"
             }
             a {
                 class: "sidebar-navlink border-t",

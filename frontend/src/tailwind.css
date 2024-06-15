@@ -54,6 +54,10 @@
                 text-white border-b border-slate-500;
     }
 
+    .link {
+        @apply cursor-pointer text-blue-600 underline;
+    }
+
     /* .fieldset {
         @apply p-3 border-2 border-solid border-slate-300;
     } */

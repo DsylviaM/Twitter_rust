@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use crate::{ prelude::*, util::api_client};
+use crate::{ elements::local_profile, prelude::*, util::api_client};
 use dioxus::{prelude::*};
 use uchat_domain::ids::UserId;
 use uchat_endpoint::user::endpoint::ViewProfileOk;
@@ -12,6 +12,7 @@ pub fn ViewProfile(cx: Scope) -> Element {
     let toaster = use_toaster(cx);
     let router = use_router(cx);
     let post_manager = use_post_manager(cx);
+    let local_profile = use_local_profile(cx);
 
     let profile = use_ref(cx, || None);
 
@@ -23,11 +24,12 @@ pub fn ViewProfile(cx: Scope) -> Element {
     use_effect(
         cx,
         (&user_id,), | (user_id,) | {
-        to_owned![api_client, post_manager, profile, toaster];
+        to_owned![api_client, post_manager, profile, toaster, local_profile];
             async move {
-                post_manager.write().clear();
+                
                 use uchat_endpoint::user::endpoint::{ViewProfile, ViewProfileOk};
                 let request = ViewProfile{ for_user: user_id };
+                post_manager.write().clear();
                 let response = fetch_json!(<ViewProfileOk>, api_client, request);
                 match response {
                     Ok(res) => {
@@ -44,7 +46,7 @@ pub fn ViewProfile(cx: Scope) -> Element {
 
     let follow_onclick = async_handler!(
         &cx,
-        [api_client, toaster, profile],
+        [api_client, toaster, profile, local_profile],
         move |_| async move {
             use uchat_endpoint::user::endpoint::{FollowUser, FollowUserOk};
             use uchat_endpoint::user::types::FollowAction;
@@ -91,6 +93,23 @@ pub fn ViewProfile(cx: Scope) -> Element {
                     false => "Follow",
                 };
 
+                let FollowButton = local_profile.read().user_id.map(|id| 
+                {
+                    if id == profile.id {
+                        None
+                    }else {
+                        cx.render(rsx! {
+                            button {
+                                class: "btn",
+                                // onclick: move |_| (),
+                                 onclick: follow_onclick,
+                                "{follow_button_text}"
+                            }
+                        })
+                    }
+                });
+            
+
                 rsx! {
                     div {
                         class: "flex flex-col gap-3",
@@ -104,12 +123,7 @@ pub fn ViewProfile(cx: Scope) -> Element {
                         },
                         div { "Handle: {profile.handle}" },
                         div { "Name: {display_name} "},
-                        button {
-                            class: "btn",
-                            // onclick: move |_| (),
-                             onclick: follow_onclick,
-                            "{follow_button_text}"
-                        }
+                        FollowButton
                     }
                 }
             }

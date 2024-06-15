@@ -20,6 +20,7 @@ pub fn Home(cx: Scope) -> Element {
             toaster
             .write()
             .info("Retrieving home posts...", chrono::Duration::seconds(3));
+        post_manager.write().clear();
         let response = fetch_json!(<HomePostsOk>, api_client, HomePosts);
         match response {
             Ok(res) => post_manager.write().populate(res.posts.into_iter()),
@@ -30,7 +31,33 @@ pub fn Home(cx: Scope) -> Element {
         })
     };
 
-    let Posts = post_manager.read().all_to_public();
+    let Posts = {
+
+       let posts = post_manager.read().all_to_public();
+
+       if posts.is_empty() {
+        let TrendingLink = rsx! {
+            a {
+                class:"link",
+                onclick: move |_| {
+                    router.navigate_to(page::POST_TRENDING);
+                },
+                "trending"
+            },
+        };
+        rsx! {
+            div {
+                class: "flex flex-col text-center justify-center
+                h-[calc(100vh_-_var(--navbar-height)_-_var(--appbar-height))]",
+                span {
+                    "Check out what's ", TrendingLink ", and follow some users to get started."
+                }
+            }
+        }
+       } else {
+            rsx! { posts.into_iter() }
+       }
+    };
 
     cx.render (rsx! {
         Appbar {
@@ -56,6 +83,6 @@ pub fn Home(cx: Scope) -> Element {
                 append_class: appbar::BUTTON_SELECTED,
             },
         },
-        Posts.into_iter()
+        Posts
     })
 }

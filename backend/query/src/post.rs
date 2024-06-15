@@ -157,7 +157,7 @@ pub fn delete_bookmark(
                         None => false,
                     })
             }
-        }
+     }
     
     #[derive(Clone, Debug, DieselNewType, Deserialize, Serialize)]
     pub struct ReactionData(serde_json::Value);

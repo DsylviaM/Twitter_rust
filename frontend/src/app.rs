@@ -8,7 +8,7 @@ use fermi::{use_init_atom_root, AtomRef};
 
 //делается для глобальных переменных
 pub static TOASTER: AtomRef<Toaster> = |_| Toaster::default();
-pub static POSTMANAGER: AtomRef<PostManager> = |_| PostManager::default();
+pub static POST_MANAGER: AtomRef<PostManager> = |_| PostManager::default();
 pub static LOCAL_PROFILE: AtomRef<LocalProfile> = |_| LocalProfile::default();
 pub static SIDEBAR: AtomRef<SidebarManager> = |_| SidebarManager::default();
 

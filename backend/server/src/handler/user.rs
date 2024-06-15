@@ -7,12 +7,12 @@ use hyper::StatusCode;
 use rand::rngs;
 use tracing::info;
 use uchat_crypto::password;
-use uchat_endpoint::{user::{endpoint::{CreateUser, CreateUserOk, FollowUser, FollowUserOk, GetMyProfile, GetMyProfileOk, Login, LoginOk, UpdateProfile, UpdateProfileOk, ViewProfile, ViewProfileOk}, types::{FollowAction, PublicUserProfile}}, Update};
+use uchat_endpoint::{user::{endpoint::{CreateUser, CreateUserOk, FollowUser, FollowUserOk, GetMyProfile, GetMyProfileOk, Login, LoginOk, UpdateProfile, UpdateProfileOk, ViewProfile, ViewProfileOk}, types::{FollowAction, PublicUserProfile}}, RequestFailed, Update};
 use uchat_query::{schema::users::profile_image, session::{self, Session}, user::{UpdateProfileParams, User}};
 use uchat_domain::{ids::*, user::{self, DisplayName}};
 use url::Url;
 
-use crate::{error::ApiResult, extractor::{DbConnection, UserSession}, AppState};
+use crate::{error::{ApiError, ApiResult}, extractor::{DbConnection, UserSession}, AppState};
 
 use super::{save_image, AuthorizedApiRequest, PublicApiRequest};
 
@@ -28,7 +28,10 @@ fn profile_id_to_url(id: &str) -> Url {
 #[derive(Clone)]
 pub struct SessionsSignature(String);
 
-pub fn to_public(user:User) -> ApiResult<PublicUserProfile> {
+pub fn to_public(
+    conn: &mut uchat_query::AsyncConnection,
+    session: Option<&UserSession>,
+    user:User) -> ApiResult<PublicUserProfile> {
     Ok(
        PublicUserProfile {
          id: user.id,
@@ -39,7 +42,12 @@ pub fn to_public(user:User) -> ApiResult<PublicUserProfile> {
          //здесь подгружается в профайл имейдж наша картинка
          profile_image: user.profile_image.as_ref().map(|id|profile_id_to_url(id) ),
          created_at: user.created_at,
-         am_following: false,
+         am_following: {
+            match session {
+                Some(session) => uchat_query::user::is_following( conn, session.user_id, user.id)?,
+                None => false,
+            }
+         },
     })
 }
 
@@ -178,25 +186,27 @@ impl AuthorizedApiRequest for UpdateProfile{
         session:UserSession,
         state: AppState,
     ) -> ApiResult<Self::Response> {
+        let mut payload = self;
         let password = {
-            if let Update::Change(ref password) = self.password {
+            if let Update::Change(ref password) = payload.password {
                 Update::Change(uchat_crypto::hash_password(password)?)
             } else {
                 Update::NoChange
             }
         };
 
-        if let Update::Change(ref img) = self.profile_image {
+        if let Update::Change(ref img) = payload.profile_image {
             let id = ImageId::new();
             save_image(id, img).await?;
+            payload.profile_image = Update::Change(id.to_string());
         }
 
         let query_params = UpdateProfileParams {
             id: session.user_id,
-            display_name: self.display_name,
-            email: self.email,
+            display_name: payload.display_name,
+            email: payload.email,
             password_hash: password,
-            profile_image: self.profile_image.clone(),
+            profile_image: payload.profile_image.clone(),
         };
 
         uchat_query::user::update_profile(&mut conn, query_params)?;
@@ -224,7 +234,7 @@ impl AuthorizedApiRequest for ViewProfile{
         state: AppState,
     ) -> ApiResult<Self::Response> {
         let profile = uchat_query::user::get(&mut conn, self.for_user)?;
-        let profile = to_public(profile)?;
+        let profile = to_public(&mut conn, Some(&session), profile)?;
 
         let mut posts = vec![];
 
@@ -251,6 +261,14 @@ impl AuthorizedApiRequest for FollowUser{
         session:UserSession,
         state: AppState,
     ) -> ApiResult<Self::Response> {
+        if self.user_id == session.user_id {
+            return Err(ApiError {
+                code: Some(StatusCode::BAD_REQUEST),
+                err: color_eyre::Report::new(RequestFailed {
+                    msg: "cannot follow self".to_string(),
+                }),
+            })
+        }
         match self.action {
             FollowAction::Follow => {
                 uchat_query::user::follow(&mut conn, session.user_id, self.user_id)?;
