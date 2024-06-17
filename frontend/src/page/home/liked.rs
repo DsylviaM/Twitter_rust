@@ -17,6 +17,8 @@ pub fn HomeLiked(cx: Scope) -> Element {
             toaster
             .write()
             .info("Retrieving home posts...", chrono::Duration::seconds(3));
+        
+        post_manager.write().clear();
         let response = fetch_json!(<LikedPostsOk>, api_client, LikedPosts);
         match response {
             Ok(res) => post_manager.write().populate(res.posts.into_iter()),
@@ -27,7 +29,34 @@ pub fn HomeLiked(cx: Scope) -> Element {
         })
     };
 
-    let Posts = post_manager.read().all_to_public();
+    let Posts = {
+
+        let posts = post_manager.read().all_to_public();
+ 
+        if posts.is_empty() {
+         let TrendingLink = rsx! {
+             a {
+                 class:"link",
+                 onclick: move |_| {
+                     router.navigate_to(page::POST_TRENDING);
+                 },
+                 "trending"
+             },
+         };
+         rsx! {
+             div {
+                 class: "flex flex-col text-center justify-center
+                 h-[calc(100vh_-_var(--navbar-height)_-_var(--appbar-height))]",
+                 span {
+                     "You haven't liked any posts yet. Check out what's ", TrendingLink ", and follow some users to get started."
+                 }
+             }
+         }
+        } else {
+             rsx! { posts.into_iter() }
+        }
+     };
+
 
     cx.render (rsx! {
         Appbar {
@@ -48,11 +77,12 @@ pub fn HomeLiked(cx: Scope) -> Element {
             },
             AppbarImgButton {
                 click_handler: move |_| router.navigate_to(page::HOME),
+                // click_handler: move |_| (),
                 img: "/static/icons/icon-home.svg",
                 label: "Home",
                 title: "Go to home page",
             },
         },
-        Posts.into_iter()
+        Posts
     })
 }

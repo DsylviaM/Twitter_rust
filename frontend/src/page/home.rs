@@ -20,6 +20,7 @@ pub fn Home(cx: Scope) -> Element {
             toaster
             .write()
             .info("Retrieving home posts...", chrono::Duration::seconds(3));
+        
         post_manager.write().clear();
         let response = fetch_json!(<HomePostsOk>, api_client, HomePosts);
         match response {

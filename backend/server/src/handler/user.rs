@@ -12,7 +12,7 @@ use uchat_query::{schema::users::profile_image, session::{self, Session}, user::
 use uchat_domain::{ids::*, user::{self, DisplayName}};
 use url::Url;
 
-use crate::{error::{ApiError, ApiResult}, extractor::{DbConnection, UserSession}, AppState};
+use crate::{error::{ApiError, ApiResult, ServerError}, extractor::{DbConnection, UserSession}, AppState};
 
 use super::{save_image, AuthorizedApiRequest, PublicApiRequest};
 
@@ -121,16 +121,25 @@ impl PublicApiRequest for Login{
             tracing::span!(tracing::Level::INFO, "logging in", user = %self.username.as_ref())
                 .entered();
         let check_password = || -> ApiResult<()> {
-            let hash = uchat_query::user::get_password_hash(&mut conn, &self.username)?;
-            let hash = uchat_crypto::password::deserialize_hash(&hash)?;
-    
-            uchat_crypto::verify_password(self.password, &hash)?;
+            let hash = uchat_query::user::get_password_hash(&mut conn, &self.username)
+            .map_err(|_| ServerError::wrong_password())?;
+
+            let hash = uchat_crypto::password::deserialize_hash(&hash)
+            .map_err(|_| ServerError::wrong_password())?;
+
+            uchat_crypto::verify_password(self.password, &hash)
+            .map_err(|_| ServerError::wrong_password())?;
+
             Ok(())
         };
 
-        let user = uchat_query::user::find(&mut conn, &self.username)?;
+        let user = uchat_query::user::find(&mut conn, &self.username)
+        .map_err(|_| ServerError::missing_login())?;
+
 
         let (session, signature, duration) = new_seassion(&state, &mut conn, user.id)?;
+
+        let profile_image_url = user.profile_image.as_ref().map(|id| profile_id_to_url(id));
 
         Ok((
             StatusCode::OK,
@@ -140,14 +149,14 @@ impl PublicApiRequest for Login{
                 session_signature:signature.0,
                 display_name:user.display_name,
                 email: user.email,
-                profile_image: None,
+                profile_image: profile_image_url,
                 user_id: user.id,
 
-            })
+            }),
         ))
-
     }
 }
+
 
 #[async_trait]
 impl AuthorizedApiRequest for GetMyProfile{

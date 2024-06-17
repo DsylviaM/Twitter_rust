@@ -11,6 +11,8 @@ pub struct  PageState{
     username: UseState<String>,
     password: UseState<String>,
     form_errors: KeyedNotifications,
+    server_messages: KeyedNotifications,
+
 }
 impl PageState{
     pub fn new(cx:Scope) -> Self {
@@ -18,6 +20,8 @@ impl PageState{
             username: use_state(cx, String::new).clone(),
             password: use_state(cx, String::new).clone(),
             form_errors: KeyedNotifications::default(),
+            server_messages: KeyedNotifications::default(),
+
         }
 
     }
@@ -126,7 +130,9 @@ pub fn Login(cx: Scope) -> Element{
                             local_profile.write().user_id = Some(res.user_id);
                             router.navigate_to(page::HOME)
                         }
-                        Err(e) => (),
+                        Err(e) => {
+                            page_state.with_mut(|state| state.server_messages.set("login-fail", e.to_string()))
+                        },
                     }
             });
     //поверка на вход имя и пароля
@@ -162,6 +168,11 @@ pub fn Login(cx: Scope) -> Element{
             class: "flex flex-col gap-5",
             prevent_default: "onsubmit",
             onsubmit: form_onsubmit,
+
+            KeyedNotificationBox{
+                legend: "Login Errors",
+                notifications: page_state.clone().with(|state|state.server_messages.clone()),
+            }
 
             UsernameInput {
                 state: page_state.with(|state| state.username.clone()),
